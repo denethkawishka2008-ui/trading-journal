@@ -23,7 +23,6 @@ function initTradingAnimation() {
     const homeView = document.getElementById('home-view');
     if (!homeView) return;
 
-    // පරණ කැන්වස් එකක් තිබ්බොත් අයින් කරනවා
     const oldCanvas = document.getElementById('trading-canvas');
     if (oldCanvas) oldCanvas.remove();
 
@@ -34,15 +33,30 @@ function initTradingAnimation() {
     canvas.style.left = '0';
     canvas.style.width = '100%';
     canvas.style.height = '100%';
-    canvas.style.zIndex = '-1';
-    canvas.style.pointerEvents = 'none';
-    canvas.style.opacity = '0.15'; // Background එකේ ලස්සනට පේන්න
+    canvas.style.zIndex = '0'; // 👈 මවුස් එක හරියටම අල්ලගන්න z-index එක 0 කළා
+    canvas.style.pointerEvents = 'auto'; // 👈 මවුස් එකේ චලනයන් කැන්වස් එකට කෙලින්ම ගන්න 'auto' කළා
     homeView.style.position = 'relative';
     homeView.insertBefore(canvas, homeView.firstChild);
 
     const ctx = canvas.getContext('2d');
     let width = canvas.width = homeView.offsetWidth;
     let height = canvas.height = homeView.offsetHeight;
+
+    let mouseX = -1;
+    let mouseY = -1;
+    let isMouseIn = false;
+
+    // 🎯 මවුස් එක හෝම් පේජ් එකේ කොහේ ගියත් හරියටම ලයින් දෙක අඳින්න මේක උදව් වෙනවා
+    homeView.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+        isMouseIn = true;
+    });
+
+    homeView.addEventListener('mouseleave', () => {
+        isMouseIn = false;
+    });
 
     window.addEventListener('resize', () => {
         if(document.getElementById('trading-canvas')) {
@@ -51,85 +65,142 @@ function initTradingAnimation() {
         }
     });
 
-    let points = [];
-    let currentX = 0;
-    let currentY = height / 2;
+    let candles = [];
+    const candleWidth = 12;  
+    const gap = 8;           
+    const maxCandles = Math.ceil(width / (candleWidth + gap));
 
-    function generatePoints() {
-        points = [];
-        let x = 0;
-        let y = height / 2 + (Math.random() - 0.5) * 100;
-        while (x < width + 50) {
-            points.push({ x: x, y: y });
-            x += 40 + Math.random() * 40;
-            y += (Math.random() - 0.5) * 80;
-            if (y < 50) y = 50;
-            if (y > height - 50) y = height - 50;
+    function createInitialCandles() {
+        candles = [];
+        let currentPrice = height / 2;
+        for (let i = 0; i < maxCandles - 5; i++) {
+            let open = currentPrice;
+            let close = currentPrice + (Math.random() - 0.5) * 60;
+            if (close < 80) close = 80;
+            if (close > height - 80) close = height - 80;
+            let high = Math.min(open, close) - Math.random() * 20;
+            let low = Math.max(open, close) + Math.random() * 20;
+            candles.push({ open, close, high, low });
+            currentPrice = close;
         }
     }
-    generatePoints();
+    createInitialCandles();
 
-    let drawIndex = 0;
-    let pX = points[0].x;
-    let pY = points[0].y;
+    let liveCandle = {
+        open: candles[candles.length - 1]?.close || height / 2,
+        close: candles[candles.length - 1]?.close || height / 2,
+        high: candles[candles.length - 1]?.close || height / 2,
+        low: candles[candles.length - 1]?.close || height / 2,
+        tickCount: 0
+    };
 
-    function animateLine() {
+    function drawTradingChart() {
         ctx.clearRect(0, 0, width, height);
-        
-        // Grid Lines ඇඳීම
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.1)';
+
+        // 📊 1. පසුබිම් Grid Lines ඇඳීම
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
         ctx.lineWidth = 1;
-        for (let i = 0; i < width; i += 60) {
+        for (let i = 0; i < width; i += 50) {
             ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke();
         }
-        for (let i = 0; i < height; i += 60) {
+        for (let i = 0; i < height; i += 50) {
             ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke();
         }
 
-        // Trading Chart Line එක ඇඳීම
-        ctx.beginPath();
-        ctx.strokeStyle = '#22c55e'; // Green Chart Line
-        ctx.lineWidth = 3;
+        // 🕯️ 2. හැමතිස්සෙම පෙනෙන Candles ටික ඇඳීම
+        candles.forEach((candle, index) => {
+            let x = index * (candleWidth + gap);
+            let isGreen = candle.close < candle.open;
+            let color = isGreen ? 'rgba(34, 197, 94, 0.45)' : 'rgba(239, 68, 68, 0.45)'; // බැක්ග්‍රවුන්ඩ් එක නිසා ලස්සනට Opacity එක හැදුවා
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x + candleWidth / 2, candle.high);
+            ctx.lineTo(x + candleWidth / 2, candle.low);
+            ctx.stroke();
+            let bodyHeight = Math.abs(candle.close - candle.open);
+            ctx.fillRect(x, Math.min(candle.open, candle.close), candleWidth, Math.max(bodyHeight, 1));
+        });
+
+        // ⚡ 3. Live චලනය වන Candle එක ඇඳීම
+        let liveX = candles.length * (candleWidth + gap);
+        let isLiveGreen = liveCandle.close < liveCandle.open;
+        let liveColor = isLiveGreen ? '#22c55e' : '#ef4444';
         ctx.shadowBlur = 10;
-        ctx.shadowColor = '#22c55e';
-        ctx.moveTo(points[0].x, points[0].y);
-
-        for (let i = 1; i <= drawIndex; i++) {
-            ctx.lineTo(points[i].x, points[i].y);
-        }
-        ctx.lineTo(pX, pY);
-        ctx.stroke();
-        ctx.shadowBlur = 0; // Reset Shadow
-
-        // Live Moving Dot එක
+        ctx.shadowColor = liveColor;
+        ctx.strokeStyle = liveColor;
+        ctx.fillStyle = liveColor;
         ctx.beginPath();
-        ctx.arc(pX, pY, 5, 0, Math.PI * 2);
-        ctx.fillStyle = '#ef4444'; // Red Live Dot
-        ctx.fill();
+        ctx.moveTo(liveX + candleWidth / 2, liveCandle.high);
+        ctx.lineTo(liveX + candleWidth / 2, liveCandle.low);
+        ctx.stroke();
+        let liveBodyHeight = Math.abs(liveCandle.close - liveCandle.open);
+        ctx.fillRect(liveX, Math.min(liveCandle.open, liveCandle.close), candleWidth, Math.max(liveBodyHeight, 1));
+        ctx.shadowBlur = 0;
 
-        // ඊළඟ Point එකට යන ගමන ගණනය කිරීම
-        let target = points[drawIndex + 1];
-        if (target) {
-            let dx = target.x - pX;
-            let dy = target.y - pY;
-            let dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 4) {
-                pX = target.x;
-                pY = target.y;
-                drawIndex++;
-            } else {
-                pX += (dx / dist) * 4;
-                pY += (dy / dist) * 4;
-            }
-        } else {
-            drawIndex = 0;
-            generatePoints();
-            pX = points[0].x;
-            pY = points[0].y;
+        // 🔴 4. Live Right Price Line
+        ctx.beginPath();
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = liveColor;
+        ctx.moveTo(liveX + candleWidth, liveCandle.close);
+        ctx.lineTo(width, liveCandle.close);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 🎯 5. මවුස් එක යන තැනට ඇඳෙන ප්‍රස්තාර ලයින් දෙක (Crosshair Lines)
+        if (isMouseIn && mouseX >= 0 && mouseY >= 0) {
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)'; // ලයින් දෙක හොඳින් කැපිලා පේන්න opacity එක වැඩි කළා
+            ctx.lineWidth = 1;
+            ctx.setLineDash([6, 6]); // TradingView ස්ටයිල් තිත් ඉරි
+
+            // සිරස් රේඛාව (Vertical Line)
+            ctx.moveTo(mouseX, 0);
+            ctx.lineTo(mouseX, height);
+
+            // තිරස් රේඛාව (Horizontal Line)
+            ctx.moveTo(0, mouseY);
+            ctx.lineTo(width, mouseY);
+            
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset Line Dash
+            
+            // මවුස් පොයින්ටර් එක මැද ලස්සන පොඩි රවුමක්
+            ctx.beginPath();
+            ctx.arc(mouseX, mouseY, 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
         }
-        requestAnimationFrame(animateLine);
+
+        // 🔄 6. Market Ticks Update කිරීම
+        liveCandle.close += (Math.random() - 0.5) * 12;
+        if (liveCandle.close < liveCandle.high) liveCandle.high = liveCandle.close;
+        if (liveCandle.close > liveCandle.low) liveCandle.low = liveCandle.close;
+        liveCandle.tickCount++;
+
+        if (liveCandle.tickCount > 30) {
+            candles.push({
+                open: liveCandle.open,
+                close: liveCandle.close,
+                high: liveCandle.high,
+                low: liveCandle.low
+            });
+            if (candles.length >= maxCandles) {
+                candles.shift();
+            }
+            liveCandle = {
+                open: liveCandle.close,
+                close: liveCandle.close,
+                high: liveCandle.close,
+                low: liveCandle.close,
+                tickCount: 0
+            };
+        }
+
+        requestAnimationFrame(drawTradingChart);
     }
-    animateLine();
+    drawTradingChart();
 }
 
 // 🔻 2. COPYRIGHT NOTE AND CSS INJECTION (RUNS ON LOAD)
@@ -185,7 +256,7 @@ function initUIVisuals() {
     if (sidebar && !document.querySelector('.dev-copyright-note')) {
         const copyrightDiv = document.createElement('div');
         copyrightDiv.className = 'dev-copyright-note';
-        copyrightDiv.innerHTML = `© COPYRIGHT BY DENETH'S SOFTWARES<br>v1.1`;
+        copyrightDiv.innerHTML = `© COPYRIGHT BY DENETH'S SOFTWARES<br>v1.5`;
         sidebar.appendChild(copyrightDiv);
     }
     
@@ -245,21 +316,62 @@ function showSection(sectionId) {
     }
 }
 
+// 💎 PREMIUM CUSTOM MODAL POPUP LOGIC FOR NEW TABLE
 function createNewTable() {
-    const tableName = prompt("Enter table name ::");
-    if (!tableName) return;
+    // 1. අපේ ලස්සන Custom HTML Modal Popup එක variable එකකට ගන්නවා
+    const tableModal = document.getElementById('custom-table-modal');
+    const tableNameInput = document.getElementById('new-table-name-input');
+    const confirmModalBtn = document.getElementById('confirm-table-modal');
+    const cancelModalBtn = document.getElementById('cancel-table-modal');
+    const closeModalX = document.getElementById('close-table-modal');
 
-    const newTable = {
-        id: Date.now(),
-        name: tableName,
-        months: {
-            Jan: [], Feb: [], Mar: [], Apr: [], May: [], Jun: [],
-            Jul: [], Aug: [], Sep: [], Oct: [], Nov: [], Dec: []
+    if (!tableModal) {
+        alert("HTML Modal එකක් සොයාගත නොහැක! කරුණාකර HTML එකට Modal කේතය එකතු කරන්න.");
+        return;
+    }
+
+    // 2. පොපප් එක screen එකට පෙන්වනවා (hidden class එක අයින් කරලා)
+    tableNameInput.value = ''; 
+    tableModal.classList.remove('hidden'); 
+    tableNameInput.focus();
+
+    // 3. Close හෝ Cancel බටන් එබුවොත් පොපප් එක වහන්න
+    const hideModal = () => tableModal.classList.add('hidden');
+    cancelModalBtn.onclick = hideModal;
+    closeModalX.onclick = hideModal;
+    
+    // පොපප් එකෙන් පිටත ක්ලික් කරත් වැහෙන්න
+    tableModal.onclick = (e) => { if (e.target === tableModal) hideModal(); };
+
+    // 4. "Create Table" බටන් එක ක්ලික් කරද්දී Firebase එකට සේව් වෙන කොටස
+    confirmModalBtn.onclick = () => {
+        const tableName = tableNameInput.value.trim();
+        
+        if (tableName === "") {
+            alert("Please enter a valid table name!");
+            return;
         }
+
+        // 🔥 ඔයාගේ පැරණි Firebase Logic එක (Table Object එක සෑදීම)
+        const newTable = {
+            id: Date.now(),
+            name: tableName,
+            months: {
+                Jan: [], Feb: [], Mar: [], Apr: [], May: [], Jun: [],
+                Jul: [], Aug: [], Sep: [], Oct: [], Nov: [], Dec: []
+            }
+        };
+
+        journalTables.push(newTable);
+        saveDataToFirebase(); // Firebase එකට ඔටෝ සේව් වෙනවා
+        renderTableList();    // Screen එක රීෆ්‍රෙෂ් වෙනවා
+        hideModal();          // වැඩේ ඉවර වුණාම පොපප් එක වැහෙනවා
     };
-    journalTables.push(newTable);
-    saveDataToFirebase(); 
-    renderTableList();
+
+    // Enter කී එක එබුවත් සේව් වෙන්න
+    tableNameInput.onkeypress = (e) => {
+        if (e.key === 'Enter') confirmModalBtn.click();
+    };
 }
 
 function renderTableList() {
@@ -360,7 +472,7 @@ function renderRows(rows) {
                 <td style="background-color: rgba(0,0,0,0.05);"></td>
                 <td colspan="3" style="color: #1e1b4b; padding: 10px; font-size: 13px;">WEEKLY RESULT</td>
                 <td colspan="2" style="background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;">Profit: ${row.profitCount}</td>
-                <td style="background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca;">Loss: ${row.lossCount}</td>
+                <td style="background-color: #fee2e2; color: rgb(255, 5, 5); border: 1px solid #fecaca;">Loss: ${row.lossCount}</td>
                 <td style="background-color: #fef9c3; color: #854d0e; border: 1px solid #fef08a;">BE: ${row.beCount}</td>
                 <td colspan="3" style="color: #1e1b4b; font-size: 13px;">Weekly Winning Percentage</td>
                 <td colspan="2" style="background-color: #d1fae5; color: #047857; font-size: 15px; font-weight: 800; border: 1px solid #a7f3d0;">${row.winRate}%</td>
@@ -773,46 +885,40 @@ function deletePairOption(index) {
     saveDataToFirebase(); 
     renderSettingsLists();
 }
-
-/*delete row function for multiple rows*/
+// 🗑️ SELECTED ROW එක විතරක් මකා දැමීමේ ප්‍රධාන ශ්‍රිතය
 function deleteSelectedRows() {
+    if (!currentTableId) return;
     const tableData = journalTables.find(t => t.id === currentTableId);
-    if (!tableData) return;
-
     let monthRows = tableData.months[currentMonth];
+
+    // Tick කරලා තියෙන බොක්ස් එක අල්ලගන්නවා
     const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
-    
-    let indexesToDelete = [];
-
-    checkedBoxes.forEach(box => {
-        let idx = parseInt(box.getAttribute('data-index'));
-        if (!isNaN(idx)) {
-            indexesToDelete.push(idx);
-        }
-    });
-
-    if (indexesToDelete.length === 0) {
-        // 🎬 මුකුත් තෝරලා නැත්නම් මුළු Table එකම ගැස්සෙන (Shake) ඇනිමේෂන් එකක් දානවා
-        const table = document.querySelector('.journal-table') || document.getElementById('table-body');
-        if(table) {
-            table.classList.add('row-shake');
-            setTimeout(() => table.classList.remove('row-shake'), 400);
-        }
-        alert("කරුණාකර මැකීමට අවශ්‍ය පේළියේ ඇති කොටුව (Checkbox) ටික් කරන්න!");
+    if (checkedBoxes.length === 0) {
+        alert("කරුණාකර ඉවත් කිරීමට අවශ්‍ය පේළියේ ඇති Checkbox එක තෝරන්න!");
         return;
     }
 
-    if (confirm(`තෝරාගත් පේළිය මකා දැමීමට ඔබට විශ්වාසද?`)) {
-        indexesToDelete.sort((a, b) => b - a);
-        
-        indexesToDelete.forEach(index => {
-            if (monthRows[index]) {
-                monthRows.splice(index, 1);
-            }
+    if (confirm("තෝරාගත් පේළිය මකා දැමීමට ඔබට විශ්වාසද?")) {
+        let indicesToDelete = [];
+        checkedBoxes.forEach(cb => {
+            indicesToDelete.push(parseInt(cb.getAttribute('data-index')));
         });
 
+        // ලොකු Index එකේ සිට කුඩා Index එකට Sort කර මකනවා (කේත අවුල් නොවීමට)
+        indicesToDelete.sort((a, b) => b - a);
+        indicesToDelete.forEach(idx => {
+            monthRows.splice(idx, 1);
+        });
+
+        // පරණ Weekly summary පේළි ටික Clear කරනවා
+        for (let i = monthRows.length - 1; i >= 0; i--) {
+            if (monthRows[i].isWeeklyExcelRow) {
+                monthRows.splice(i, 1);
+            }
+        }
+
+        saveDataToFirebase();
         refreshWeeklyStats(monthRows);
-        alert("තෝරාගත් පේළිය සාර්ථකව මකා දැමුණා! 💾");
     }
 }
 
