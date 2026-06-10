@@ -23,6 +23,7 @@ function initTradingAnimation() {
     const homeView = document.getElementById('home-view');
     if (!homeView) return;
 
+    // පරණ කැන්වස් එකක් තිබ්බොත් අයින් කරනවා
     const oldCanvas = document.getElementById('trading-canvas');
     if (oldCanvas) oldCanvas.remove();
 
@@ -33,30 +34,15 @@ function initTradingAnimation() {
     canvas.style.left = '0';
     canvas.style.width = '100%';
     canvas.style.height = '100%';
-    canvas.style.zIndex = '0'; // 👈 මවුස් එක හරියටම අල්ලගන්න z-index එක 0 කළා
-    canvas.style.pointerEvents = 'auto'; // 👈 මවුස් එකේ චලනයන් කැන්වස් එකට කෙලින්ම ගන්න 'auto' කළා
+    canvas.style.zIndex = '-1';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.opacity = '0.15'; // Background එකේ ලස්සනට පේන්න
     homeView.style.position = 'relative';
     homeView.insertBefore(canvas, homeView.firstChild);
 
     const ctx = canvas.getContext('2d');
     let width = canvas.width = homeView.offsetWidth;
     let height = canvas.height = homeView.offsetHeight;
-
-    let mouseX = -1;
-    let mouseY = -1;
-    let isMouseIn = false;
-
-    // 🎯 මවුස් එක හෝම් පේජ් එකේ කොහේ ගියත් හරියටම ලයින් දෙක අඳින්න මේක උදව් වෙනවා
-    homeView.addEventListener('mousemove', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        mouseX = e.clientX - rect.left;
-        mouseY = e.clientY - rect.top;
-        isMouseIn = true;
-    });
-
-    homeView.addEventListener('mouseleave', () => {
-        isMouseIn = false;
-    });
 
     window.addEventListener('resize', () => {
         if(document.getElementById('trading-canvas')) {
@@ -65,144 +51,86 @@ function initTradingAnimation() {
         }
     });
 
-    let candles = [];
-    const candleWidth = 12;  
-    const gap = 8;           
-    const maxCandles = Math.ceil(width / (candleWidth + gap));
+    let points = [];
+    let currentX = 0;
+    let currentY = height / 2;
 
-    function createInitialCandles() {
-        candles = [];
-        let currentPrice = height / 2;
-        for (let i = 0; i < maxCandles - 5; i++) {
-            let open = currentPrice;
-            let close = currentPrice + (Math.random() - 0.5) * 60;
-            if (close < 80) close = 80;
-            if (close > height - 80) close = height - 80;
-            let high = Math.min(open, close) - Math.random() * 20;
-            let low = Math.max(open, close) + Math.random() * 20;
-            candles.push({ open, close, high, low });
-            currentPrice = close;
+    function generatePoints() {
+        points = [];
+        let x = 0;
+        let y = height / 2 + (Math.random() - 0.5) * 100;
+        while (x < width + 50) {
+            points.push({ x: x, y: y });
+            x += 40 + Math.random() * 40;
+            y += (Math.random() - 0.5) * 80;
+            if (y < 50) y = 50;
+            if (y > height - 50) y = height - 50;
         }
     }
-    createInitialCandles();
+    generatePoints();
 
-    let liveCandle = {
-        open: candles[candles.length - 1]?.close || height / 2,
-        close: candles[candles.length - 1]?.close || height / 2,
-        high: candles[candles.length - 1]?.close || height / 2,
-        low: candles[candles.length - 1]?.close || height / 2,
-        tickCount: 0
-    };
+    let drawIndex = 0;
+    let pX = points[0].x;
+    let pY = points[0].y;
 
-    function drawTradingChart() {
+    function animateLine() {
         ctx.clearRect(0, 0, width, height);
-
-        // 📊 1. පසුබිම් Grid Lines ඇඳීම
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+        
+        // Grid Lines ඇඳීම
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.1)';
         ctx.lineWidth = 1;
-        for (let i = 0; i < width; i += 50) {
+        for (let i = 0; i < width; i += 60) {
             ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke();
         }
-        for (let i = 0; i < height; i += 50) {
+        for (let i = 0; i < height; i += 60) {
             ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke();
         }
 
-        // 🕯️ 2. හැමතිස්සෙම පෙනෙන Candles ටික ඇඳීම
-        candles.forEach((candle, index) => {
-            let x = index * (candleWidth + gap);
-            let isGreen = candle.close < candle.open;
-            let color = isGreen ? 'rgba(34, 197, 94, 0.45)' : 'rgba(239, 68, 68, 0.45)'; // බැක්ග්‍රවුන්ඩ් එක නිසා ලස්සනට Opacity එක හැදුවා
-            ctx.strokeStyle = color;
-            ctx.fillStyle = color;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(x + candleWidth / 2, candle.high);
-            ctx.lineTo(x + candleWidth / 2, candle.low);
-            ctx.stroke();
-            let bodyHeight = Math.abs(candle.close - candle.open);
-            ctx.fillRect(x, Math.min(candle.open, candle.close), candleWidth, Math.max(bodyHeight, 1));
-        });
-
-        // ⚡ 3. Live චලනය වන Candle එක ඇඳීම
-        let liveX = candles.length * (candleWidth + gap);
-        let isLiveGreen = liveCandle.close < liveCandle.open;
-        let liveColor = isLiveGreen ? '#22c55e' : '#ef4444';
+        // Trading Chart Line එක ඇඳීම
+        ctx.beginPath();
+        ctx.strokeStyle = '#22c55e'; // Green Chart Line
+        ctx.lineWidth = 3;
         ctx.shadowBlur = 10;
-        ctx.shadowColor = liveColor;
-        ctx.strokeStyle = liveColor;
-        ctx.fillStyle = liveColor;
-        ctx.beginPath();
-        ctx.moveTo(liveX + candleWidth / 2, liveCandle.high);
-        ctx.lineTo(liveX + candleWidth / 2, liveCandle.low);
-        ctx.stroke();
-        let liveBodyHeight = Math.abs(liveCandle.close - liveCandle.open);
-        ctx.fillRect(liveX, Math.min(liveCandle.open, liveCandle.close), candleWidth, Math.max(liveBodyHeight, 1));
-        ctx.shadowBlur = 0;
+        ctx.shadowColor = '#22c55e';
+        ctx.moveTo(points[0].x, points[0].y);
 
-        // 🔴 4. Live Right Price Line
-        ctx.beginPath();
-        ctx.setLineDash([4, 4]);
-        ctx.strokeStyle = liveColor;
-        ctx.moveTo(liveX + candleWidth, liveCandle.close);
-        ctx.lineTo(width, liveCandle.close);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // 🎯 5. මවුස් එක යන තැනට ඇඳෙන ප්‍රස්තාර ලයින් දෙක (Crosshair Lines)
-        if (isMouseIn && mouseX >= 0 && mouseY >= 0) {
-            ctx.beginPath();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)'; // ලයින් දෙක හොඳින් කැපිලා පේන්න opacity එක වැඩි කළා
-            ctx.lineWidth = 1;
-            ctx.setLineDash([6, 6]); // TradingView ස්ටයිල් තිත් ඉරි
-
-            // සිරස් රේඛාව (Vertical Line)
-            ctx.moveTo(mouseX, 0);
-            ctx.lineTo(mouseX, height);
-
-            // තිරස් රේඛාව (Horizontal Line)
-            ctx.moveTo(0, mouseY);
-            ctx.lineTo(width, mouseY);
-            
-            ctx.stroke();
-            ctx.setLineDash([]); // Reset Line Dash
-            
-            // මවුස් පොයින්ටර් එක මැද ලස්සන පොඩි රවුමක්
-            ctx.beginPath();
-            ctx.arc(mouseX, mouseY, 4, 0, Math.PI * 2);
-            ctx.fillStyle = '#ffffff';
-            ctx.fill();
+        for (let i = 1; i <= drawIndex; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
         }
+        ctx.lineTo(pX, pY);
+        ctx.stroke();
+        ctx.shadowBlur = 0; // Reset Shadow
 
-        // 🔄 6. Market Ticks Update කිරීම
-        liveCandle.close += (Math.random() - 0.5) * 12;
-        if (liveCandle.close < liveCandle.high) liveCandle.high = liveCandle.close;
-        if (liveCandle.close > liveCandle.low) liveCandle.low = liveCandle.close;
-        liveCandle.tickCount++;
+        // Live Moving Dot එක
+        ctx.beginPath();
+        ctx.arc(pX, pY, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ef4444'; // Red Live Dot
+        ctx.fill();
 
-        if (liveCandle.tickCount > 30) {
-            candles.push({
-                open: liveCandle.open,
-                close: liveCandle.close,
-                high: liveCandle.high,
-                low: liveCandle.low
-            });
-            if (candles.length >= maxCandles) {
-                candles.shift();
+        // ඊළඟ Point එකට යන ගමන ගණනය කිරීම
+        let target = points[drawIndex + 1];
+        if (target) {
+            let dx = target.x - pX;
+            let dy = target.y - pY;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 4) {
+                pX = target.x;
+                pY = target.y;
+                drawIndex++;
+            } else {
+                pX += (dx / dist) * 4;
+                pY += (dy / dist) * 4;
             }
-            liveCandle = {
-                open: liveCandle.close,
-                close: liveCandle.close,
-                high: liveCandle.close,
-                low: liveCandle.close,
-                tickCount: 0
-            };
+        } else {
+            drawIndex = 0;
+            generatePoints();
+            pX = points[0].x;
+            pY = points[0].y;
         }
-
-        requestAnimationFrame(drawTradingChart);
+        requestAnimationFrame(animateLine);
     }
-    drawTradingChart();
+    animateLine();
 }
-
 // 🔻 2. COPYRIGHT NOTE AND CSS INJECTION (RUNS ON LOAD)
 function initUIVisuals() {
     // CSS Animations ටික dynamic ලෙස Inject කිරීම
@@ -256,7 +184,7 @@ function initUIVisuals() {
     if (sidebar && !document.querySelector('.dev-copyright-note')) {
         const copyrightDiv = document.createElement('div');
         copyrightDiv.className = 'dev-copyright-note';
-        copyrightDiv.innerHTML = `© COPYRIGHT BY DENETH'S SOFTWARES<br>v1.5`;
+        copyrightDiv.innerHTML = `© COPYRIGHT BY DENETH'S SOFTWARES<br>v1.1`;
         sidebar.appendChild(copyrightDiv);
     }
     
@@ -304,7 +232,7 @@ function showSection(sectionId) {
     if(sectionId === 'home') {
         document.getElementById('home-view').classList.remove('hidden');
         document.getElementById('btn-home').classList.add('active');
-        initTradingAnimation(); // හෝම් ආවම ඇනිමේෂන් එක රීස්ටාර්ට් කරයි
+        initTradingAnimation(); 
     } else if(sectionId === 'tables') {
         document.getElementById('tables-list-view').classList.remove('hidden');
         document.getElementById('btn-tables').classList.add('active');
@@ -316,62 +244,21 @@ function showSection(sectionId) {
     }
 }
 
-// 💎 PREMIUM CUSTOM MODAL POPUP LOGIC FOR NEW TABLE
 function createNewTable() {
-    // 1. අපේ ලස්සන Custom HTML Modal Popup එක variable එකකට ගන්නවා
-    const tableModal = document.getElementById('custom-table-modal');
-    const tableNameInput = document.getElementById('new-table-name-input');
-    const confirmModalBtn = document.getElementById('confirm-table-modal');
-    const cancelModalBtn = document.getElementById('cancel-table-modal');
-    const closeModalX = document.getElementById('close-table-modal');
+    const tableName = prompt("Enter table name ::");
+    if (!tableName) return;
 
-    if (!tableModal) {
-        alert("HTML Modal එකක් සොයාගත නොහැක! කරුණාකර HTML එකට Modal කේතය එකතු කරන්න.");
-        return;
-    }
-
-    // 2. පොපප් එක screen එකට පෙන්වනවා (hidden class එක අයින් කරලා)
-    tableNameInput.value = ''; 
-    tableModal.classList.remove('hidden'); 
-    tableNameInput.focus();
-
-    // 3. Close හෝ Cancel බටන් එබුවොත් පොපප් එක වහන්න
-    const hideModal = () => tableModal.classList.add('hidden');
-    cancelModalBtn.onclick = hideModal;
-    closeModalX.onclick = hideModal;
-    
-    // පොපප් එකෙන් පිටත ක්ලික් කරත් වැහෙන්න
-    tableModal.onclick = (e) => { if (e.target === tableModal) hideModal(); };
-
-    // 4. "Create Table" බටන් එක ක්ලික් කරද්දී Firebase එකට සේව් වෙන කොටස
-    confirmModalBtn.onclick = () => {
-        const tableName = tableNameInput.value.trim();
-        
-        if (tableName === "") {
-            alert("Please enter a valid table name!");
-            return;
+    const newTable = {
+        id: Date.now(),
+        name: tableName,
+        months: {
+            Jan: [], Feb: [], Mar: [], Apr: [], May: [], Jun: [],
+            Jul: [], Aug: [], Sep: [], Oct: [], Nov: [], Dec: []
         }
-
-        // 🔥 ඔයාගේ පැරණි Firebase Logic එක (Table Object එක සෑදීම)
-        const newTable = {
-            id: Date.now(),
-            name: tableName,
-            months: {
-                Jan: [], Feb: [], Mar: [], Apr: [], May: [], Jun: [],
-                Jul: [], Aug: [], Sep: [], Oct: [], Nov: [], Dec: []
-            }
-        };
-
-        journalTables.push(newTable);
-        saveDataToFirebase(); // Firebase එකට ඔටෝ සේව් වෙනවා
-        renderTableList();    // Screen එක රීෆ්‍රෙෂ් වෙනවා
-        hideModal();          // වැඩේ ඉවර වුණාම පොපප් එක වැහෙනවා
     };
-
-    // Enter කී එක එබුවත් සේව් වෙන්න
-    tableNameInput.onkeypress = (e) => {
-        if (e.key === 'Enter') confirmModalBtn.click();
-    };
+    journalTables.push(newTable);
+    saveDataToFirebase(); 
+    renderTableList();
 }
 
 function renderTableList() {
@@ -461,7 +348,7 @@ function renderRows(rows) {
 
     rows.forEach((row, index) => {
         const tr = document.createElement('tr');
-        tr.className = 'animate-tr'; // 🎬 පේළි වැටෙද්දී ලස්සනට එන ඇනිමේෂන් එක
+        tr.className = 'animate-tr'; 
         
         if (row.isWeeklyExcelRow) {
             tr.style.backgroundColor = "#c0a0c9"; 
@@ -472,7 +359,7 @@ function renderRows(rows) {
                 <td style="background-color: rgba(0,0,0,0.05);"></td>
                 <td colspan="3" style="color: #1e1b4b; padding: 10px; font-size: 13px;">WEEKLY RESULT</td>
                 <td colspan="2" style="background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;">Profit: ${row.profitCount}</td>
-                <td style="background-color: #fee2e2; color: rgb(255, 5, 5); border: 1px solid #fecaca;">Loss: ${row.lossCount}</td>
+                <td style="background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca;">Loss: ${row.lossCount}</td>
                 <td style="background-color: #fef9c3; color: #854d0e; border: 1px solid #fef08a;">BE: ${row.beCount}</td>
                 <td colspan="3" style="color: #1e1b4b; font-size: 13px;">Weekly Winning Percentage</td>
                 <td colspan="2" style="background-color: #d1fae5; color: #047857; font-size: 15px; font-weight: 800; border: 1px solid #a7f3d0;">${row.winRate}%</td>
@@ -533,43 +420,38 @@ function renderRows(rows) {
                 </select>
             </td>
             
-
-          <td class="${RRClass}">
-                <select class="table-dropdown" onchange="updateDropdownData(${index}, 'side', this.value, this.parentElement)">
-                    <option value="" ${row.side === '' ? 'selected' : ''}>Select...</option>
-                    <option value="1:2" ${row.side === '1:2' ? 'selected' : ''}>1:2</option>
-                    <option value="1:3" ${row.side === '1:3' ? 'selected' : ''}>1:3</option>
+            <td class="${RRClass}">
+                <select class="table-dropdown" onchange="updateDropdownData(${index}, 'rr', this.value, this.parentElement)">
+                    <option value="" ${row.rr === '' ? 'selected' : ''}>Select...</option>
+                    <option value="1:2" ${row.rr === '1:2' ? 'selected' : ''}>1:2</option>
+                    <option value="1:3" ${row.rr === '1:3' ? 'selected' : ''}>1:3</option>
                 </select>
             </td>
                
-          
             <td contenteditable="true" onblur="updateData(${index}, 'entryReason', this.innerText)">${row.entryReason || ''}</td>
             <td contenteditable="true" onblur="updateData(${index}, 'targetPoint', this.innerText)">${row.targetPoint || ''}</td>
             <td contenteditable="true" onblur="updateData(${index}, 'notes', this.innerText)">${row.notes || ''}</td>
 
             <td>
-                <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
-                    <label class="btn-upload-label" style="background-color: #3b82f6; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold;">
+                <div style="display:flex; flex-direction:row; gap:6px; align-items:center; justify-content:center;">
+                    <label class="btn-upload-label" style="background-color: #3b82f6; color: white; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; margin: 0; display: inline-flex; align-items: center;">
                         📁 Upload
-                        <input type="file" accept="image/*" style="display:none;" onchange="uploadRowImage(this, ${index})">
+                        <input type="file" accept="image/*" style="display:none;" data-true-index="${index}" onchange="uploadRowImage(this)">
                     </label>
-                    <button id="btn-view-img-${index}" class="btn-view-img ${row.image ? '' : 'hidden'}" style="background-color: #8b5cf6; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold;" onclick="viewRowImage(${index})">👁️ View</button>
+                    <button id="btn-view-img-${index}" class="btn-view-img ${row.image ? '' : 'hidden'}" style="background-color: #8b5cf6; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; margin: 0; display: inline-flex; align-items: center;" onclick="viewRowImage(${index})">👁️ View</button>
                 </div>
             </td>
         `;
 
-        // 🎯 Checkbox එක Click කරද්දී වෙනත් Checkbox ඔටෝ Clear වන කොටස
         const chk = tr.querySelector('.row-checkbox');
-        chk.addEventListener('click', function(e) {
-            e.stopPropagation(); // Document click එක වළක්වයි
-            const currentStatus = this.checked;
-            
-            // හැම බොක්ස් එකක්ම අයින් කරයි
-            document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false);
-            
-            // ක්ලික් කරපු එක විතරක් සෙට් කරයි
-            this.checked = currentStatus;
-        });
+        if(chk) {
+            chk.addEventListener('click', function(e) {
+                e.stopPropagation(); 
+                const currentStatus = this.checked;
+                document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false);
+                this.checked = currentStatus;
+            });
+        }
 
         tbody.appendChild(tr);
     });
@@ -608,7 +490,9 @@ function updateDropdownData(rowIndex, field, value, cellElement) {
     if (!tableData) return;
 
     let monthRows = tableData.months[currentMonth];
-    monthRows[rowIndex][field] = value; 
+    if (monthRows[rowIndex]) {
+        monthRows[rowIndex][field] = value; 
+    }
 
     cellElement.className = ''; 
     if (value === 'Buy') cellElement.classList.add('cell-buy');
@@ -690,28 +574,32 @@ function calculateStats(rows) {
     }
 }
 
-function uploadRowImage(input, index) {
+function uploadRowImage(input) {
+    const index = parseInt(input.getAttribute('data-true-index'));
     const file = input.files[0];
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
             const base64Image = e.target.result;
             const tableData = journalTables.find(t => t.id === currentTableId);
-            tableData.months[currentMonth][index].image = base64Image;
+            
+            if (tableData && tableData.months[currentMonth][index]) {
+                tableData.months[currentMonth][index].image = base64Image;
+            }
             
             const viewBtn = document.getElementById(`btn-view-img-${index}`);
             if (viewBtn) viewBtn.classList.remove('hidden');
             
             saveDataToFirebase(); 
-            alert("Chart Image Uploaded and Saved to Cloud! 📈");
+            alert("Chart Image Uploaded and Permanently Saved to Cloud! 📈💾");
         };
         reader.readAsDataURL(file);
     }
 }
 
-// 👁️ 3. IMAGE MODAL WITH CUBIC-BEZIER POP ANIMATION
 function viewRowImage(index) {
     const tableData = journalTables.find(t => t.id === currentTableId);
+    if (!tableData) return;
     const rowData = tableData.months[currentMonth][index];
     if (rowData && rowData.image) {
         const modal = document.getElementById('image-modal');
@@ -720,13 +608,14 @@ function viewRowImage(index) {
         
         modal.classList.remove('hidden');
         setTimeout(() => {
-            modal.classList.add('show-modal'); // Smooth Transition Trigger
+            modal.classList.add('show-modal'); 
         }, 10);
     }
 }
 
 function closeImageModal() {
     const modal = document.getElementById('image-modal');
+    if (!modal) return;
     modal.classList.remove('show-modal');
     setTimeout(() => {
         modal.classList.add('hidden');
@@ -885,46 +774,48 @@ function deletePairOption(index) {
     saveDataToFirebase(); 
     renderSettingsLists();
 }
-// 🗑️ SELECTED ROW එක විතරක් මකා දැමීමේ ප්‍රධාන ශ්‍රිතය
-function deleteSelectedRows() {
-    if (!currentTableId) return;
-    const tableData = journalTables.find(t => t.id === currentTableId);
-    let monthRows = tableData.months[currentMonth];
 
-    // Tick කරලා තියෙන බොක්ස් එක අල්ලගන්නවා
+function deleteSelectedRows() {
+    const tableData = journalTables.find(t => t.id === currentTableId);
+    if (!tableData) return;
+
+    let monthRows = tableData.months[currentMonth];
     const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
-    if (checkedBoxes.length === 0) {
-        alert("කරුණාකර ඉවත් කිරීමට අවශ්‍ය පේළියේ ඇති Checkbox එක තෝරන්න!");
+    
+    let indexesToDelete = [];
+
+    checkedBoxes.forEach(box => {
+        let idx = parseInt(box.getAttribute('data-index'));
+        if (!isNaN(idx)) {
+            indexesToDelete.push(idx);
+        }
+    });
+
+    if (indexesToDelete.length === 0) {
+        const table = document.querySelector('.journal-table') || document.getElementById('table-body');
+        if(table) {
+            table.classList.add('row-shake');
+            setTimeout(() => table.classList.remove('row-shake'), 400);
+        }
+        alert("කරුණාකර මැකීමට අවශ්‍ය පේළියේ ඇති කොටුව (Checkbox) ටික් කරන්න!");
         return;
     }
 
-    if (confirm("තෝරාගත් පේළිය මකා දැමීමට ඔබට විශ්වාසද?")) {
-        let indicesToDelete = [];
-        checkedBoxes.forEach(cb => {
-            indicesToDelete.push(parseInt(cb.getAttribute('data-index')));
-        });
-
-        // ලොකු Index එකේ සිට කුඩා Index එකට Sort කර මකනවා (කේත අවුල් නොවීමට)
-        indicesToDelete.sort((a, b) => b - a);
-        indicesToDelete.forEach(idx => {
-            monthRows.splice(idx, 1);
-        });
-
-        // පරණ Weekly summary පේළි ටික Clear කරනවා
-        for (let i = monthRows.length - 1; i >= 0; i--) {
-            if (monthRows[i].isWeeklyExcelRow) {
-                monthRows.splice(i, 1);
+    if (confirm(`තෝරාගත් පේළිය මකා දැමීමට ඔබට විශ්වාසද?`)) {
+        indexesToDelete.sort((a, b) => b - a);
+        
+        indexesToDelete.forEach(index => {
+            if (monthRows[index]) {
+                monthRows.splice(index, 1);
             }
-        }
+        });
 
-        saveDataToFirebase();
         refreshWeeklyStats(monthRows);
+        alert("තෝරාගත් පේළිය සාර්ථකව මකා දැමුණා! 💾");
     }
 }
 
-// 🌍 4. GLOBAL CLICK LISTENER: වෙන තැනක් ක්ලික් කරොත් CHECKBOX OTO CLEAR VEMA
 document.addEventListener('click', function(e) {
-    // ක්ලික් කළේ checkbox එකක්, dropdown, textbox, හෝ delete බටන් එක උඩ නෙවෙයි නම් විතරක් ටික් අයින් කරයි
     if (!e.target.closest('.row-checkbox') && 
         e.target.id !== 'btn-delete-selected' && 
         !e.target.closest('#btn-delete-selected') && 
