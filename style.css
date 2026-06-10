@@ -1,9 +1,6 @@
-
-/* =============================================
-   🎨 GLOBAL STYLES & RESETS
-   ============================================= */
 * {
     box-sizing: border-box;
+
 }
 
 body {
@@ -14,24 +11,91 @@ body {
     color: #f8fafc;
     position: relative;
     overflow: hidden;
+    background: #030712;
+    body {
+    font-family: "Twemoji Amaranth", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+}
 
-    background: linear-gradient(135deg, #040814, #081326, #051c38, #030a17);
-    background-size: 400% 400%;
-    
-    animation: waterFlow 12s ease infinite;
+#trading-bg-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none !important;
+    opacity: 0.18;
+}
+
+#custom-glow-cursor {
+    width: 20px;
+    height: 20px;
+    background: rgba(14, 213, 168, 0.4);
+    border: 2px solid #0ed5a8;
+    border-radius: 50%;
+    position: fixed;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 9999;
+    box-shadow: 0 0 15px #0ed5a8, 0 0 30px rgba(14, 213, 168, 0.6);
+    transition: width 0.1s, height 0.1s;
 }
 
 .hidden { display: none !important; }
+body::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none !important;
+    opacity: 0.12;
+    background-image: 
+        linear-gradient(90deg, transparent 39px, rgba(34, 197, 94, 0.4) 39px, rgba(34, 197, 94, 0.4) 41px, transparent 41px),
+        radial-gradient(circle at 40px 100px, #22c55e 4px, transparent 5px),
+        radial-gradient(circle at 120px 300px, #22c55e 5px, transparent 6px),
+        radial-gradient(circle at 200px 150px, #0ed5a8 4px, transparent 5px),
+        radial-gradient(circle at 280px 400px, #22c55e 5px, transparent 6px),
+        radial-gradient(circle at 360px 200px, #0ed5a8 4px, transparent 5px),
+        radial-gradient(circle at 440px 350px, #22c55e 5px, transparent 6px);
+    background-size: 480px 600px;
+    animation: tradingLinesFlow 15s linear infinite;
+}
 
-/* =============================================
-   🌊 ANIMATION KEYFRAMES
-   ============================================= */
-@keyframes waterFlow {
-    0% { background-position: 0% 50%; }
-    25% { background-position: 50% 100%; }
-    50% { background-position: 100% 50%; }
-    75% { background-position: 50% 0%; }
-    100% { background-position: 0% 50%; }
+body::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none !important;
+    opacity: 0.08;
+    background-image: 
+        linear-gradient(90deg, transparent 19px, rgba(14, 213, 168, 0.3) 19px, rgba(14, 213, 168, 0.3) 21px, transparent 21px),
+        radial-gradient(circle at 60px 450px, #0ed5a8 4px, transparent 5px),
+        radial-gradient(circle at 180px 150px, #22c55e 4px, transparent 5px),
+        radial-gradient(circle at 300px 500px, #0ed5a8 5px, transparent 6px),
+        radial-gradient(circle at 420px 100px, #22c55e 4px, transparent 5px);
+    background-size: 480px 700px;
+    animation: tradingLinesFlow 22s linear infinite reverse;
+}
+
+.hidden { 
+    display: none !important; 
+}
+
+@keyframes tradingLinesFlow {
+    0% {
+        background-position: 0px 600px;
+    }
+    100% {
+        background-position: 0px 0px;
+    }
 }
 
 /* =============================================
@@ -60,7 +124,7 @@ body {
 }
 
 .sidebar .logo {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 800;
     margin-bottom: 35px;
     color: #0ed5a8;
@@ -141,26 +205,88 @@ nav a:hover, nav a.active {
 /* =============================================
    🏠 HOME VIEW HEADER BLOCK
    ============================================= */
-.header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
+/* --- PREMIUM TITLE CONTAINER --- */
+.trading-journal-title-box {
+    text-align: center;
+    width: 100%;               /* 👈 මුළු පේජ් එකේම ඉඩ ගන්නවා */
+    max-width: 100%;
+    margin: 25px auto 35px auto; /* 👈 autoMargin එකෙන් වම සහ දකුණ නූලටම මැද තියනවා */
+    padding: 15px;
     position: relative;
-    z-index: 1;
+    z-index: 10;
+    display: flex;             /* 👈 ඇතුළේ තියෙන එව්වත් හරියටම සෙන්ටර් කරන්න flex දැම්මා */
+    flex-direction: column;
+    align-items: center;       /* 👈 සිරස්ව සහ තිරස්ව මැදටම ගනී */
+
 }
 
-.header-row h2 {
-    margin: 0;
-    font-size: 28px;
+/* --- 🚀 MAIN TITLE WITH BREATHING GLOW EFFECT --- */
+.main-journal-title {
+    font-size: 34px;
     font-weight: 800;
-    font-family: 'Segoe UI', sans-serif;
-    color: #0ed5a8 !important; 
-    letter-spacing: 0.5px;
-    text-shadow: 0 0 4px rgba(14, 213, 168, 0.4),
-                 0 0 12px rgba(14, 213, 168, 0.6),
-                 0 0 20px rgba(14, 213, 168, 0.3);
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 0 auto;            /* 👈 Title එක මැදටම ලොක් කලා */
+    text-align: center;
+    font-family: 'Poppins', 'Segoe UI', sans-serif;
+    display: inline-block;     /* Gradient එක ලස්සනට මැද පේන්න */
+    
+    /* Soft Trading Glow */
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+    
+    /* ඇනිමේෂන් එක ක්‍රියාත්මක කිරීම */
+    animation: titleBreathing 3s ease-in-out infinite alternate;
 }
+
+/* --- 💚 TRADING JOURNAL HIGHLIGHT (GREEN GRADIENT) --- */
+.main-journal-title .highlight-text {
+    background: linear-gradient(135deg, #22c55e, #4ade80);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+    
+    /* Neon Green Glow */
+    filter: drop-shadow(0 0 10px rgba(34, 197, 94, 0.5));
+}
+
+/* --- 📈 SUB TITLE --- */
+.sub-journal-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #94a3b8; /* Slate gray color */
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    margin: 10px auto 0 auto; /* 👈 Subtitle එකත් නූලටම මැදට ගත්තා */
+    text-align: center;
+    opacity: 0.8;
+}
+/* --- 🎬 ANIMATION KEYFRAMES --- */
+@keyframes titleBreathing {
+    0% {
+        transform: scale(1);
+        text-shadow: 0 0 12px rgba(255, 255, 255, 0.2),
+                     0 0 20px rgba(34, 197, 94, 0.2);
+    }
+    100% {
+        transform: scale(1.015); /* හෙමින් පොඩ්ඩක් ලොකු වෙනවා */
+        text-shadow: 0 0 18px rgba(255, 255, 255, 0.3),
+                     0 0 30px rgba(34, 197, 94, 0.45); /* Glow එක වැඩි වෙනවා */
+    }
+}
+
+/* --- 📦 HEADER ROW CONTAINER (MAIN LAYOUT) --- */
+.header-row {
+    display: flex;
+    justify-content: center;  
+    align-items: center;
+    width: 100%;
+    margin-bottom: 25px;        
+    position: relative;        
+    z-index: 1;   
+            
+}
+
 
 /*===============================================
 All table titles will use this style for a consistent premium look across the dashboard
@@ -369,19 +495,35 @@ All table titles will use this style for a consistent premium look across the da
 /* =============================================
    📑 SPREADSHEET LAYOUT DESIGN
    ============================================= */
+/* =============================================
+   🗂️ Table colors an others
+   ============================================= */
 .spreadsheet-container {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.02), 0 4px 6px -2px rgba(0,0,0,0.03);
-    position: relative;
-    z-index: 1;
+    width: 100% !important;
+    max-height: 500px;       
+    overflow-x: auto !important; 
+    overflow-y: auto !important; /* 👈 3. උඩට/පල්ලෙහාට scroll bar එක (Vertical) auto දානවා */
+    padding: 5px;
+    border-radius: 8px;
+    background: #ee7575; 
+    
+    tbody tr:hover {
+    background-color: #5eafff !important; /* 👈 මේ පාට වෙනස් කරන්න */
+    }
+}
+
+
+table {
+    width: 100% !important;
+    min-width: 1200px !important; 
+    table-layout: fixed;
+    border-collapse: collapse;
 }
 
 .table-responsive {
     width: 100%;
     overflow-x: auto;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #668ec3;
     border-radius: 8px;
 }
 
@@ -399,21 +541,21 @@ th, td {
     padding: 10px 14px;
     font-size: 13px;
     text-align: center;
-    border-bottom: 1px solid #e2e8f0;
-    border-right: 1px solid #e2e8f0;
+    border-bottom: 1px solid #ff0f0f;
+    border-right: 1px solid #ff0000;
     white-space: nowrap !important; 
 }
 
 th {
-    background-color: #f8fafc;
-    color: #475569;
+    background-color: #fa3939;
+    color: #fbfdff;
     font-weight: 700;
     position: sticky;
     top: 0;
     text-transform: uppercase;
     font-size: 11px;
     letter-spacing: 0.5px;
-    border-bottom: 2px solid #cbd5e1;
+    border-bottom: 2px solid #3b93ff;
 }
 
 tbody tr:hover {
@@ -429,37 +571,31 @@ td[contenteditable="true"] {
 }
 
 td[contenteditable="true"]:focus {
-    background-color: #ffffff;
+    background-color: #fb0004c5;
     box-shadow: inset 0 0 0 2px #0ed5a8;
+}
+
+/* 📅 Table එක ඇතුළේ තියෙන Date Input එක ලස්සන කිරීම */
+table input[type="date"] {
+    background-color: #074ff8 !important; /* Date box එකේ පසුබිම් පාට */
+    color: #000000 !important;            /* 👈 අකුරු සහ දිනවල පාට (Neon green වගේ ලස්සන පාටක්) */
+    border: 1px solid #334155 !important;
+    padding: 5px !important;
+    border-radius: 4px !important;
+    font-weight: bold;
+}
+
+/* Date picker icon එකේ පාට වෙනස් කිරීමට (Chrome/Edge සඳහා) */
+table input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1); /* 👈 Calendar icon එක සුදු පාට කරනවා (dark theme එකට ගැලපෙන්න) */
+    cursor: pointer;
 }
 
 /* =============================================
    🔘 INTERACTIVE BUTTONS & INPUT STYLES
    ============================================= */
-.btn-delete {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.4);
-    color: #f87171;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 13px;
-    padding: 8px 16px;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-left: 10px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
 
-.btn-delete:hover {
-    background: #ef4444;
-    color: #ffffff;
-    border-color: #f87171;
-    transform: translateY(-2px);
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
-}
+
 
 .btn-row {
     background: rgba(6, 182, 212, 0.1);
@@ -534,6 +670,101 @@ td[contenteditable="true"]:focus {
     box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
 }
 
+.import-container {
+    margin: 15px;
+    display: inline-block;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* json file open */
+.btn-import {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    padding: 10px 60px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1);
+    transition: all 0.3s ease;
+    
+}
+
+.btn-import:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.2);
+    transform: translateY(-2px);
+}
+
+.btn-import:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px 0 rgba(16, 185, 129, 0.2);
+}
+
+.btn-import:hover .btn-icon {
+    animation: bounceIcon 0.5s ease infinite alternate;
+}
+
+@keyframes bounceIcon {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-3px);
+    }
+}
+
+/* jason file save */
+.btn-export {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+    color: #ffffff;
+    padding: 12px 26px;
+    border: none;
+    border-radius: 50px; 
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.2);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    position: relative;
+    overflow: hidden;
+}
+
+
+.btn-export:hover {
+    transform: translateY(-4px) scale(1.03); 
+    background: linear-gradient(135deg, #5a52ea 0%, #4338ca 100%);
+    
+    box-shadow: 0 0 25px rgba(79, 70, 229, 0.6), 0 8px 20px rgba(79, 70, 229, 0.4); 
+}
+
+
+.btn-export:active {
+    transform: translateY(-1px) scale(0.98);
+    box-shadow: 0 0 10px rgba(79, 70, 229, 0.4);
+}
+
+
+.btn-icon {
+    display: inline-block;
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.btn-export:hover .btn-icon {
+    transform: rotate(360deg) scale(1.2);
+}
+
 /* =============================================
    ✨ PREMIUM ADD NEW TABLE BUTTON (LEFT ALIGNED)
    ============================================= */
@@ -541,8 +772,8 @@ td[contenteditable="true"]:focus {
     display: flex;
     justify-content: flex-start;
     width: 100%;
-    margin-bottom: 20px;
-    padding-left: 500px;
+    margin-bottom: 60px;
+    padding-left: 200px;
 }
 
 #btn-add-table.btn-primary {
@@ -553,10 +784,10 @@ td[contenteditable="true"]:focus {
     font-weight: 700;
     font-size: 14px;
     padding: 12px 24px;
-    border-radius: 10px;
+    border-radius: 50px;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     box-shadow: 0 4px 15px rgba(14, 213, 168, 0.25), 
                 inset 0 1px 0 rgba(255, 255, 255, 0.3);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -575,6 +806,113 @@ td[contenteditable="true"]:focus {
 #btn-add-table.btn-primary:active {
     transform: translateY(-1px);
     box-shadow: 0 4px 10px rgba(14, 213, 168, 0.2);
+}
+
+
+
+
+/* 🎴 Modal Background Overlay */
+.prompt-modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+}
+
+/* 📦 Main Popup Box Style */
+.prompt-modal-content {
+    background-color: #1e1b4b; /* Dark Blue තීම් එක */
+    padding: 24px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    animation: popupSlideIn 0.3s ease-out;
+    border: 1px solid #312e81;
+}
+
+.prompt-modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    font-family: sans-serif;
+}
+
+/* ✍️ Input Box Style (වටකුරු සුදු බොක්ස් එක) */
+.prompt-modal-content input[type="text"] {
+    width: 100%;
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px; /* වටකුරු හැඩය */
+    font-size: 14px;
+    font-weight: bold;
+    background-color: #ffffff; /* පිරිසිදු සුදු පසුබිම */
+    color: #000000;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.prompt-modal-content input[type="text"]:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* 🔘 Buttons Layout */
+.prompt-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.prompt-modal-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.prompt-modal-actions button:hover {
+    opacity: 0.9;
+}
+
+/* Cancel Button */
+.prompt-modal-actions .btn-cancel {
+    background-color: #64748b;
+    color: #ffffff;
+}
+
+/* Confirm Button */
+.prompt-modal-actions .btn-confirm {
+    background-color: #3b82f6;
+    color: #ffffff;
+}
+
+/* 🎬 Animation */
+@keyframes popupSlideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 /* =============================================
@@ -866,7 +1204,112 @@ td[contenteditable="true"]:focus {
     box-shadow: 0 25px 40px -10px rgba(239, 68, 68, 0.18), 
                 0 10px 20px -5px rgba(0, 0, 0, 0.04);
 }
+/* ============================================= 
+   🎬 1. SLIDESHOW CONTAINER (LEFT ALIGNED)
+============================================= */
+.slideshow-container {
+    max-width: 100%;
+    width: 550px;
+    height: 320px;
+    
+    /* වම් පැත්තේ Menu එක ගාවටම සෙට් කර ඉහළින් තැබීම */
+    position: absolute !important; 
+    z-index: 20;               
+    top: 250px;            
+    left: 40px !important;    
+    margin: 0 !important;     
+    
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    background: #0f172a;
+    pointer-events: auto !important;
+}
 
+/* ============================================= 
+   🔥 2. NEW MY RULES PREMIUM BOX (UNDER SLIDESHOW)
+============================================= */
+.slideshow-container {
+    max-width: 100%;
+    width: 550px;
+    height: 320px;
+    position: absolute !important; 
+    z-index: 20;               
+    top: 250px;            
+    left: 40px !important;    
+    margin: 0 !important;     
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    background: #0f172a;
+    pointer-events: auto !important;
+}
+
+.my-rules-card {
+    width: 550px;             
+    padding: 20px 25px;
+    position: absolute !important;
+    z-index: 20;
+    top: 600px;               
+    left: 40px !important;
+    margin: 0 !important;
+    border-radius: 16px;
+    background: #0f172a;
+    border: 3px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+}
+
+.rules-card-title {
+    margin: 0 0 15px 0;
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'Segoe UI', sans-serif;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rules-card-title .fire-emoji {
+    animation: firePulse 1.5s ease-in-out infinite alternate;
+}
+
+.rules-card-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.rules-card-list li {
+    font-size: 15px;
+    font-weight: 500;
+    color: #cbd5e1;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.rules-card-list li:last-child {
+    margin-bottom: 0;
+}
+
+.bullet-check {
+    width: 8px;
+    height: 8px;
+    background-color: #ef4444;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 8px #ef4444;
+}
+
+@keyframes firePulse {
+    0% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(239,68,68,0.4)); }
+    100% { transform: scale(1.15); filter: drop-shadow(0 0 8px rgba(239,68,68,0.8)); }
+}
 /* =============================================
    📝 HEADER TITLE STYLE (H2)
    ============================================= */
@@ -993,7 +1436,7 @@ td[contenteditable="true"]:focus {
 }
 
 .main-content, .view-section, main {
-    padding-left: 65px !important;
+    padding-left: 20px !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -1009,26 +1452,30 @@ td[contenteditable="true"]:focus {
     opacity: 0;
 }
 
-.main-content.expanded, .view-section.expanded {
-    margin-left: 0px !important;
-    width: calc(100% - 65px) !important;
-}
-
 /* =============================================
    🖼️ HOME VIEW AUTOMATIC SLIDESHOW
    ============================================= */
+/* ============================================= */
 .slideshow-container {
     max-width: 100%;
     width: 550px;
     height: 320px;
-    position: relative;
-    margin: 25px auto;
+    
+    /* 🔥 Menu එක පැත්තටම (වමට) Absolute කරලා ලොක් කරන ක්‍රමය */
+    position: absolute !important; 
+    z-index: 20;               
+    top: 298px;            
+    left: 600px !important;    /* 👈 100 වෙනුවට 40px දැම්මා, එතකොට වම් පැත්තේ Menu එක ගාවටම ලස්සනට සෙට් වෙනවා */
+    margin: 0 !important;     /* 👈 මැදට යන එක නවත්තන්න margin බිංදුව කරා */
+    
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-    border: 4px solid #ffffff;
-    background: #f8fafc;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    background: #0f172a;
+    pointer-events: auto !important; /* බටන් වැඩ කරන්න */
 }
+
 
 .mySlides {
     position: absolute;
@@ -1121,4 +1568,80 @@ table input[type="text"] {
     height: 25px !important;
     border-radius: 4px;
     box-sizing: border-box;
+}
+
+
+/*  Logo */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.sidebar-logo-container {
+    margin-top: auto;
+    padding: 25px;
+    text-align: center;
+    position: relative;
+}
+
+.logo-link {
+    display: inline-block;
+    position: relative;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.sidebar-logo {
+    width: 130px;
+    height: 130px;
+    object-fit: contain;
+    border-radius: 50%;
+    display: block;
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.4));
+    animation: goldGlow 3s ease-in-out infinite alternate;
+}
+
+.logo-link::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: rgba(255, 255, 255, 0.8);
+    border-bottom-color: rgba(255, 255, 255, 0.8);
+    animation: circularShine 3s linear infinite;
+    box-sizing: border-box;
+}
+
+.logo-link:hover {
+    transform: scale(1.08) rotate(5deg);
+}
+
+.logo-link:hover .sidebar-logo {
+    filter: drop-shadow(0 0 20px rgba(255, 195, 0, 0.9));
+}
+
+@keyframes goldGlow {
+    0% {
+        filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.4));
+    }
+    100% {
+        filter: drop-shadow(0 0 18px rgba(255, 195, 0, 0.8));
+    }
+}
+
+@keyframes circularShine {
+    0% {
+        transform: rotate(0deg);
+        filter: blur(1px);
+    }
+    100% {
+        transform: rotate(360deg);
+        filter: blur(1px);
+    }
 }
