@@ -672,36 +672,51 @@ function uploadRowImage(input) {
     const index = parseInt(input.getAttribute('data-true-index'));
     const file = input.files[0];
     if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const base64Image = e.target.result;
-            const tableData = journalTables.find(t => t.id === currentTableId);
-            
-            if (tableData && tableData.months[currentMonth][index]) {
-                tableData.months[currentMonth][index].image = base64Image;
+        const formData = new FormData();
+        formData.append("image", file);
+
+        // මෙතනට ඔයාගේ අලුත්ම API Key එක ලස්සනට සෙට් කරලා තියෙන්නේ මචං
+        fetch("https://api.imgbb.com/1/upload?key=2218858316a9a4b62dbdb33a193bc2f5", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const downloadURL = data.data.url;
+                const tableData = journalTables.find(t => t.id === currentTableId);
+                
+                if (tableData && tableData.months[currentMonth][index]) {
+                    tableData.months[currentMonth][index].image = downloadURL;
+                }
+                
+                const viewBtn = document.getElementById(`btn-view-img-${index}`);
+                if (viewBtn) viewBtn.classList.remove('hidden');
+                
+                saveDataToFirebase();
+
+                // Custom Notification Toast
+                const oldToast = document.getElementById('custom-toast-msg');
+                if (oldToast) oldToast.remove();
+
+                const toast = document.createElement('div');
+                toast.id = 'custom-toast-msg';
+                toast.style = "position:fixed; top:20px; right:20px; background:#10b981; color:#ffffff; padding:14px 24px; border-radius:8px; font-weight:bold; font-family:sans-serif; font-size:14px; box-shadow:0 5px 15px rgba(0,0,0,0.3); z-index:999999; animation: toastSlide 0.3s ease-out; border-left:5px solid #047857;";
+                toast.innerHTML = "📈 Chart Image Saved Successfully!";
+                
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.animation = "toastFadeOut 0.3s ease-in forwards";
+                    setTimeout(() => toast.remove(), 300);
+                }, 2500);
+            } else {
+                alert("Upload failed via API");
             }
-            
-            const viewBtn = document.getElementById(`btn-view-img-${index}`);
-            if (viewBtn) viewBtn.classList.remove('hidden');
-            
-            saveDataToFirebase(); 
-
-            const oldToast = document.getElementById('custom-toast-msg');
-            if (oldToast) oldToast.remove();
-
-            const toast = document.createElement('div');
-            toast.id = 'custom-toast-msg';
-            toast.style = "position:fixed; top:20px; right:20px; background:#10b981; color:#ffffff; padding:14px 24px; border-radius:8px; font-weight:bold; font-family:sans-serif; font-size:14px; box-shadow:0 5px 15px rgba(0,0,0,0.3); z-index:999999; animation: toastSlide 0.3s ease-out; border-left:5px solid #047857;";
-            toast.innerHTML = "📈 Chart Image Uploaded Successfully!";
-            
-            document.body.appendChild(toast);
-
-            setTimeout(() => {
-                toast.style.animation = "toastFadeOut 0.3s ease-in forwards";
-                setTimeout(() => toast.remove(), 300);
-            }, 2500);
-        };
-        reader.readAsDataURL(file);
+        })
+        .catch(error => {
+            alert("Error uploading image: " + error.message);
+        });
     }
 }
 
@@ -1088,3 +1103,69 @@ document.getElementById('download-pdf-btn').addEventListener('click', () => {
         pdf.save('Trading_Journal_Snapshot.pdf');
     });
 });
+
+
+
+
+function exportJSONBackup() {
+ 
+    if (typeof journalTables !== 'undefined' && journalTables.length > 0) {
+        
+    
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(journalTables, null, 2));
+        
+    
+        const today = new Date().toISOString().split('T')[0];
+        const downloadAnchor = document.createElement('a');
+        
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `Trading_Journal_Backup_${today}.json`);
+        document.body.appendChild(downloadAnchor);
+        
+        downloadAnchor.click(); 
+        downloadAnchor.remove();
+        
+ 
+        alert("📊 මුළු ඩේටාබේස් එකම සාර්ථකව PC එකට Backup කරගත්තා මචං!");
+    } else {
+        alert("මකන්න හෝ Backup කරන්න තරම් ඩේටා කිසිවක් ටේබල් එකේ නැහැ!");
+    }
+}
+
+
+
+function importJSONBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+
+            const importedData = JSON.parse(e.target.result);
+            
+            if (Array.isArray(importedData)) {
+          
+                journalTables = importedData;
+                
+             
+                saveDataToFirebase(); 
+                
+        
+                if (typeof renderTables === 'function') {
+                    renderTables(); 
+                } else if (typeof loadJournalData === 'function') {
+                    loadJournalData();
+                }
+                
+                alert("✅ JSON Backup එක සාර්ථකව Import කරා මචං! දැන් ඔක්කොම ඩේටා බලාගන්න පුළුවන්.");
+            } else {
+                alert("අවුලක් තියෙනවා! මේක වැරදි ෆයිල් එකක් වගෙයි.");
+            }
+        } catch (err) {
+            alert("ෆයිල් එක කියවීමේදී දෝෂයක් වැටුණා: " + err.message);
+        }
+    };
+    
+    reader.readAsText(file);
+}

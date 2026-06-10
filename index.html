@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trading Journal Multi-Manager</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jdecked/twemoji-amaranth@v14.0.2/twemoji-amaranth.css">
     <link rel="stylesheet" href="style.css">
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -19,6 +20,15 @@
             <a href="#" id="btn-home" class="active" onclick="showSection('home')">🏠 Home</a>
             <a href="#" id="btn-tables" onclick="showSection('tables')">📊 All Tables</a>
             <a href="#" id="btn-settings" onclick="showSection('settings')">⚙️ Settings</a>
+<div class="sidebar-logo-container">
+    <a href="https://wa.me/94706716409" target="_blank" class="logo-link">
+        <img src="Dk logo 4.png" alt="Dk logo 4" class="sidebar-logo">
+    </a>
+</div>
+
+
+
+
         </nav>
     </div>
 
@@ -68,7 +78,14 @@
 
 <div class="btn-primary-container">
     <button id="btn-add-table" class="btn-primary" onclick="createNewTable()">+ Add New Table</button>
+<div class="import-container">
+    <input type="file" id="jsonFileInput" accept=".json" onchange="importJSONBackup(event)" style="display: none;">
     
+    <button onclick="document.getElementById('jsonFileInput').click()" class="btn-import">
+        <span class="btn-icon">📂</span>
+        <span class="btn-text">Import JSON Backup</span>
+    </button>
+</div>
 </div>
     </div>
 
@@ -96,14 +113,23 @@
 
                 <button class="btn-row" onclick="addNewRow()">+ Add Row</button>
 
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+                    <div class="export-container">
+                        <button id="btn-json-backup" onclick="exportJSONBackup()" class="btn-export">
+                            <span class="btn-icon">📦</span>
+                            <span class="btn-text">Export JSON Backup</span>
+                        </button>
+                    </div>
+
                 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
                 <button id="download-excel-btn">Export to Excel (.xlsx)</button>
                 <table id="my-trading-table">
                 </table>
 
 
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 
                 <button id="download-pdf-btn">Export to PDF</button>
 

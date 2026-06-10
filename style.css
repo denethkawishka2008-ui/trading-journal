@@ -1,5 +1,6 @@
 * {
     box-sizing: border-box;
+
 }
 
 body {
@@ -11,6 +12,9 @@ body {
     position: relative;
     overflow: hidden;
     background: #030712;
+    body {
+    font-family: "Twemoji Amaranth", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
 }
 
 #trading-bg-canvas {
@@ -666,6 +670,101 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
     box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
 }
 
+.import-container {
+    margin: 15px;
+    display: inline-block;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* json file open */
+.btn-import {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    padding: 10px 60px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1);
+    transition: all 0.3s ease;
+    
+}
+
+.btn-import:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.2);
+    transform: translateY(-2px);
+}
+
+.btn-import:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px 0 rgba(16, 185, 129, 0.2);
+}
+
+.btn-import:hover .btn-icon {
+    animation: bounceIcon 0.5s ease infinite alternate;
+}
+
+@keyframes bounceIcon {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-3px);
+    }
+}
+
+/* jason file save */
+.btn-export {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+    color: #ffffff;
+    padding: 12px 26px;
+    border: none;
+    border-radius: 50px; 
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.2);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    position: relative;
+    overflow: hidden;
+}
+
+
+.btn-export:hover {
+    transform: translateY(-4px) scale(1.03); 
+    background: linear-gradient(135deg, #5a52ea 0%, #4338ca 100%);
+    
+    box-shadow: 0 0 25px rgba(79, 70, 229, 0.6), 0 8px 20px rgba(79, 70, 229, 0.4); 
+}
+
+
+.btn-export:active {
+    transform: translateY(-1px) scale(0.98);
+    box-shadow: 0 0 10px rgba(79, 70, 229, 0.4);
+}
+
+
+.btn-icon {
+    display: inline-block;
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.btn-export:hover .btn-icon {
+    transform: rotate(360deg) scale(1.2);
+}
+
 /* =============================================
    ✨ PREMIUM ADD NEW TABLE BUTTON (LEFT ALIGNED)
    ============================================= */
@@ -673,8 +772,8 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
     display: flex;
     justify-content: flex-start;
     width: 100%;
-    margin-bottom: 20px;
-    padding-left: 500px;
+    margin-bottom: 60px;
+    padding-left: 200px;
 }
 
 #btn-add-table.btn-primary {
@@ -685,10 +784,10 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
     font-weight: 700;
     font-size: 14px;
     padding: 12px 24px;
-    border-radius: 10px;
+    border-radius: 50px;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     box-shadow: 0 4px 15px rgba(14, 213, 168, 0.25), 
                 inset 0 1px 0 rgba(255, 255, 255, 0.3);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1469,4 +1568,80 @@ table input[type="text"] {
     height: 25px !important;
     border-radius: 4px;
     box-sizing: border-box;
+}
+
+
+/*  Logo */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.sidebar-logo-container {
+    margin-top: auto;
+    padding: 25px;
+    text-align: center;
+    position: relative;
+}
+
+.logo-link {
+    display: inline-block;
+    position: relative;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.sidebar-logo {
+    width: 130px;
+    height: 130px;
+    object-fit: contain;
+    border-radius: 50%;
+    display: block;
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.4));
+    animation: goldGlow 3s ease-in-out infinite alternate;
+}
+
+.logo-link::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: rgba(255, 255, 255, 0.8);
+    border-bottom-color: rgba(255, 255, 255, 0.8);
+    animation: circularShine 3s linear infinite;
+    box-sizing: border-box;
+}
+
+.logo-link:hover {
+    transform: scale(1.08) rotate(5deg);
+}
+
+.logo-link:hover .sidebar-logo {
+    filter: drop-shadow(0 0 20px rgba(255, 195, 0, 0.9));
+}
+
+@keyframes goldGlow {
+    0% {
+        filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.4));
+    }
+    100% {
+        filter: drop-shadow(0 0 18px rgba(255, 195, 0, 0.8));
+    }
+}
+
+@keyframes circularShine {
+    0% {
+        transform: rotate(0deg);
+        filter: blur(1px);
+    }
+    100% {
+        transform: rotate(360deg);
+        filter: blur(1px);
+    }
 }
