@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trading Journal Multi-Manager</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jdecked/twemoji-amaranth@v14.0.2/twemoji-amaranth.css">
     <link rel="stylesheet" href="style.css">
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -12,11 +13,22 @@
 <body>
 
     <div class="sidebar">
-        <div class="logo">Lahiru</div>
+        <div class="logo">
+                <h2>Welcome back, Lahiru! <span class="wave-emoji">👋</span></h2>
+                </div>
         <nav>
             <a href="#" id="btn-home" class="active" onclick="showSection('home')">🏠 Home</a>
             <a href="#" id="btn-tables" onclick="showSection('tables')">📊 All Tables</a>
             <a href="#" id="btn-settings" onclick="showSection('settings')">⚙️ Settings</a>
+<div class="sidebar-logo-container">
+    <a href="https://wa.me/94706716409" target="_blank" class="logo-link">
+        <img src="Dk logo 4.png" alt="Dk logo 4" class="sidebar-logo">
+    </a>
+</div>
+
+
+
+
         </nav>
     </div>
 
@@ -24,8 +36,13 @@
         
         <div id="home-view" class="view-section">
             <div class="header-row">
-                <h2>Welcome back, Lahiru! <span class="wave-emoji">👋</span></h2>
-                <br><br>
+            <div class="trading-journal-title-box">
+                <h1 class="main-journal-title">
+                    Lahiru's <span class="highlight-text">Trading Journal</span> System
+                </h1>
+                <p class="sub-journal-title">📊 Plan the Trade, Trade the Plan</p>
+            </div>
+            
                 
                 <div class="slideshow-container">
                     <div class="mySlides fade">
@@ -39,16 +56,14 @@
                     </div>
                 </div>
             </div
-            
-            <div class="My-Rules">
-                <h2>📉 My Rules 🔥</h2>
-                <ul>
-                    <li>1:1 After the run. you need to do BE.</li>
-                    <li>SL TP is Must .</li>
-                    <li>Daily 1 or 2 Entry</li>
-                </ul>
-            </div>
-        </div>
+          <div class="my-rules-card">
+    <h2 class="rules-card-title">📉 My Rules <span class="fire-emoji">🔥</span></h2>
+    <ul class="rules-card-list">
+        <li><span class="bullet-check"></span> 1:1 After the run. you need to do BE.</li>
+        <li><span class="bullet-check"></span> SL TP is Must.</li>
+        <li><span class="bullet-check"></span> Daily 1 or 2 Entry</li>
+    </ul>
+</div>
         
 
         <button id="btn-toggle-sidebar" class="toggle-hamburger-btn" onclick="toggleSidebar()">
@@ -63,6 +78,14 @@
 
 <div class="btn-primary-container">
     <button id="btn-add-table" class="btn-primary" onclick="createNewTable()">+ Add New Table</button>
+<div class="import-container">
+    <input type="file" id="jsonFileInput" accept=".json" onchange="importJSONBackup(event)" style="display: none;">
+    
+    <button onclick="document.getElementById('jsonFileInput').click()" class="btn-import">
+        <span class="btn-icon">📂</span>
+        <span class="btn-text">Import JSON Backup</span>
+    </button>
+</div>
 </div>
     </div>
 
@@ -89,10 +112,33 @@
                 </div>
 
                 <button class="btn-row" onclick="addNewRow()">+ Add Row</button>
-                <button id="btn-delete-selected" class="btn-delete" onclick="deleteSelectedRows()">🗑️ Delete Selected</button>      </div>
 
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+                    <div class="export-container">
+                        <button id="btn-json-backup" onclick="exportJSONBackup()" class="btn-export">
+                            <span class="btn-icon">📦</span>
+                            <span class="btn-text">Export JSON Backup</span>
+                        </button>
+                    </div>
+
+                <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+                <button id="download-excel-btn">Export to Excel (.xlsx)</button>
+                <table id="my-trading-table">
+                </table>
+
+
+
+
+                <button id="download-pdf-btn">Export to PDF</button>
+
+                <table id="my-trading-table">
+                </table>
+
+            </div>
             <div class="month-tabs">
-                <button class="month-btn active" onclick="switchMonth('Jan')">Jan</button>
+                <button class="month-btn active" onclick="switchMonth('Jan')">Jana</button>
                 <button class="month-btn" onclick="switchMonth('Feb')">Feb</button>
                 <button class="month-btn" onclick="switchMonth('Mar')">Mar</button>
                 <button class="month-btn" onclick="switchMonth('Apr')">Apr</button>
@@ -111,7 +157,6 @@
                     <table>
                         <thead>
                             <tr>
-                                <th><input type="checkbox" id="select-all" onclick="toggleSelectAll(this)"></th>
                                 <th>Date</th>
                                 <th>Day</th>
                                 <th>Pair</th>
@@ -193,6 +238,11 @@
             </div>
         </div>
     </div>
+   
+    <canvas id="trading-bg-canvas"></canvas>
+<div id="custom-glow-cursor"></div>
+
+
 
     <script src="script.js"></script>
 </body>
