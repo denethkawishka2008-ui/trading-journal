@@ -1,1647 +1,1171 @@
-* {
-    box-sizing: border-box;
+const firebaseConfig = {
+  apiKey: "AIzaSyB9xqHvd6JiY61170MDh4p2buq6iNjz8jg",
+  authDomain: "my-trading-journal-afb80.firebaseapp.com",
+  projectId: "my-trading-journal-afb80",
+  storageBucket: "my-trading-journal-afb80.firebasestorage.app",
+  messagingSenderId: "921260248794",
+  appId: "1:921260248794:web:864d95da363f9935725fe3",
+  measurementId: "G-PS7GH6951L"
+};
 
-}
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore(); 
 
-body {
-    margin: 0;
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-    display: flex;
-    height: 100vh;
-    color: #f8fafc;
-    position: relative;
-    overflow: hidden;
-    background: #030712;
-    body {
-    font-family: "Twemoji Amaranth", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-}
-}
+let journalTables = []; 
+let currentTableId = null;
+let currentMonth = 'Jan'; 
+let methodOptions = ['MSS', 'CISD'];
+let sessionOptions = ['London', 'New York'];
+let pairOptions = ['EUR/USD', 'GBP/USD'];
+// 📈 1. HOME PAGE BACKGROUND REAL TRADING WAVE ANIMATION
+function initTradingAnimation() {
+    const homeView = document.getElementById('home-view');
+    if (!homeView) return;
 
-#trading-bg-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    pointer-events: none !important;
-    opacity: 0.18;
-}
+    const oldCanvas = document.getElementById('trading-canvas');
+    if (oldCanvas) oldCanvas.remove();
 
-#custom-glow-cursor {
-    width: 20px;
-    height: 20px;
-    background: rgba(14, 213, 168, 0.4);
-    border: 2px solid #0ed5a8;
-    border-radius: 50%;
-    position: fixed;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    z-index: 9999;
-    box-shadow: 0 0 15px #0ed5a8, 0 0 30px rgba(14, 213, 168, 0.6);
-    transition: width 0.1s, height 0.1s;
-}
+    const canvas = document.createElement('canvas');
+    canvas.id = 'trading-canvas';
+    canvas.style.position = 'absolute';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.zIndex = '-1';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.opacity = '0.35'; // පසුබිම පැහැදිලිව පෙනීමට
+    homeView.style.position = 'relative';
+    homeView.insertBefore(canvas, homeView.firstChild);
 
-.hidden { display: none !important; }
-body::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    pointer-events: none !important;
-    opacity: 0.12;
-    background-image: 
-        linear-gradient(90deg, transparent 39px, rgba(34, 197, 94, 0.4) 39px, rgba(34, 197, 94, 0.4) 41px, transparent 41px),
-        radial-gradient(circle at 40px 100px, #22c55e 4px, transparent 5px),
-        radial-gradient(circle at 120px 300px, #22c55e 5px, transparent 6px),
-        radial-gradient(circle at 200px 150px, #0ed5a8 4px, transparent 5px),
-        radial-gradient(circle at 280px 400px, #22c55e 5px, transparent 6px),
-        radial-gradient(circle at 360px 200px, #0ed5a8 4px, transparent 5px),
-        radial-gradient(circle at 440px 350px, #22c55e 5px, transparent 6px);
-    background-size: 480px 600px;
-    animation: tradingLinesFlow 15s linear infinite;
-}
+    const ctx = canvas.getContext('2d');
+    let width = canvas.width = homeView.offsetWidth;
+    let height = canvas.height = homeView.offsetHeight;
 
-body::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    pointer-events: none !important;
-    opacity: 0.08;
-    background-image: 
-        linear-gradient(90deg, transparent 19px, rgba(14, 213, 168, 0.3) 19px, rgba(14, 213, 168, 0.3) 21px, transparent 21px),
-        radial-gradient(circle at 60px 450px, #0ed5a8 4px, transparent 5px),
-        radial-gradient(circle at 180px 150px, #22c55e 4px, transparent 5px),
-        radial-gradient(circle at 300px 500px, #0ed5a8 5px, transparent 6px),
-        radial-gradient(circle at 420px 100px, #22c55e 4px, transparent 5px);
-    background-size: 480px 700px;
-    animation: tradingLinesFlow 22s linear infinite reverse;
-}
+    window.addEventListener('resize', () => {
+        if(document.getElementById('trading-canvas')) {
+            width = canvas.width = homeView.offsetWidth;
+            height = canvas.height = homeView.offsetHeight;
+        }
+    });
 
-.hidden { 
-    display: none !important; 
-}
+    let points = [];
+    let candles = [];
+    let pulseRadius = 0;
+    let pulseGrowing = true;
+    let ticks = []; 
 
-@keyframes tradingLinesFlow {
-    0% {
-        background-position: 0px 600px;
-    }
-    100% {
-        background-position: 0px 0px;
-    }
-}
+    // 🌊 සැබෑ මාකට් එකක වගේ ඉහළ පල්ලෙහා යන Wave එකක් සාදා ගැනීම (Road Map)
+    function generateMarketWave() {
+        points = [];
+        candles = [];
+        
+        let x = 0;
+        let y = height / 2 + (Math.random() - 0.5) * 50;
+        
+        // ආරම්භක ලක්ෂ්‍යය
+        points.push({ x: x, y: y });
 
-/* =============================================
-   📈 TRADING CANVAS BACKGROUND
-   ============================================= */
-#trading-canvas {
-    opacity: 0.6 !important;
-    filter: drop-shadow(0 0 20px rgba(34, 197, 94, 0.6));
-    mix-blend-mode: screen; 
-}
-
-/* =============================================
-   📁 SIDEBAR LAYOUT & STYLES
-   ============================================= */
-.sidebar {
-    width: 260px;
-    background-color: #1e293b; 
-    color: #ffffff;
-    padding: 30px 20px;
-    flex-shrink: 0;
-    box-shadow: 4px 0 15px rgba(0,0,0,0.05);
-    display: flex;
-    flex-direction: column;
-    padding-top: 60px !important; 
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.sidebar .logo {
-    font-size: 20px;
-    font-weight: 800;
-    margin-bottom: 35px;
-    color: #0ed5a8;
-    letter-spacing: 1px;
-}
-
-.sidebar-nav {
-    flex-grow: 1;
-}
-
-/* =============================================
-   🔗 NAVIGATION LINKS
-   ============================================= */
-nav a {
-    display: flex;
-    align-items: center;
-    color: #94a3b8;
-    text-decoration: none;
-    padding: 12px 15px;
-    margin-bottom: 8px;
-    border-radius: 8px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-
-nav a:hover, nav a.active {
-    background-color: #334155;
-    color: #0ed5a8;
-}
-
-/* =============================================
-   🏷️ SIDEBAR WATERMARK
-   ============================================= */
-.sidebar-watermark {
-    font-size: 11px;
-    color: #64748b;
-    text-align: center;
-    font-weight: bold;
-    letter-spacing: 1px;
-    border-top: 1px solid #334155;
-    padding-top: 15px;
-    text-transform: uppercase;
-}
-
-/* =============================================
-   💻 MAIN CONTENT WATERMARK
-   ============================================= */
-.main-content::before {
-    content: "Deneth's software";
-    position: fixed;
-    bottom: 40px;
-    right: 40px;
-    font-size: 45px;
-    font-weight: 900;
-    font-family: 'Poppins', sans-serif;
-    color: rgba(14, 213, 168, 0.03); 
-    text-shadow: 0 0 10px rgba(14, 213, 168, 0.08);
-    pointer-events: none;
-    z-index: 0;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-}
-
-/* =============================================
-   📊 DASHBOARD TABLES GRID LAYOUT
-   ============================================= */
-#table-grid {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    justify-content: flex-start !important; 
-    align-items: center !important;
-    gap: 25px !important;
-    width: 100% !important;
-    padding-left: 0 !important;
-    margin-left: 0 !important; 
-}
-
-/* =============================================
-   🏠 HOME VIEW HEADER BLOCK
-   ============================================= */
-/* --- PREMIUM TITLE CONTAINER --- */
-.trading-journal-title-box {
-    text-align: center;
-    width: 100%;               /* 👈 මුළු පේජ් එකේම ඉඩ ගන්නවා */
-    max-width: 100%;
-    margin: 25px auto 35px auto; /* 👈 autoMargin එකෙන් වම සහ දකුණ නූලටම මැද තියනවා */
-    padding: 15px;
-    position: relative;
-    z-index: 10;
-    display: flex;             /* 👈 ඇතුළේ තියෙන එව්වත් හරියටම සෙන්ටර් කරන්න flex දැම්මා */
-    flex-direction: column;
-    align-items: center;       /* 👈 සිරස්ව සහ තිරස්ව මැදටම ගනී */
-
-}
-
-/* --- 🚀 MAIN TITLE WITH BREATHING GLOW EFFECT --- */
-.main-journal-title {
-    font-size: 34px;
-    font-weight: 800;
-    color: #ffffff;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin: 0 auto;            /* 👈 Title එක මැදටම ලොක් කලා */
-    text-align: center;
-    font-family: 'Poppins', 'Segoe UI', sans-serif;
-    display: inline-block;     /* Gradient එක ලස්සනට මැද පේන්න */
-    
-    /* Soft Trading Glow */
-    text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
-    
-    /* ඇනිමේෂන් එක ක්‍රියාත්මක කිරීම */
-    animation: titleBreathing 3s ease-in-out infinite alternate;
-}
-
-/* --- 💚 TRADING JOURNAL HIGHLIGHT (GREEN GRADIENT) --- */
-.main-journal-title .highlight-text {
-    background: linear-gradient(135deg, #22c55e, #4ade80);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    display: inline-block;
-    
-    /* Neon Green Glow */
-    filter: drop-shadow(0 0 10px rgba(34, 197, 94, 0.5));
-}
-
-/* --- 📈 SUB TITLE --- */
-.sub-journal-title {
-    font-size: 14px;
-    font-weight: 500;
-    color: #94a3b8; /* Slate gray color */
-    text-transform: uppercase;
-    letter-spacing: 4px;
-    margin: 10px auto 0 auto; /* 👈 Subtitle එකත් නූලටම මැදට ගත්තා */
-    text-align: center;
-    opacity: 0.8;
-}
-/* --- 🎬 ANIMATION KEYFRAMES --- */
-@keyframes titleBreathing {
-    0% {
-        transform: scale(1);
-        text-shadow: 0 0 12px rgba(255, 255, 255, 0.2),
-                     0 0 20px rgba(34, 197, 94, 0.2);
-    }
-    100% {
-        transform: scale(1.015); /* හෙමින් පොඩ්ඩක් ලොකු වෙනවා */
-        text-shadow: 0 0 18px rgba(255, 255, 255, 0.3),
-                     0 0 30px rgba(34, 197, 94, 0.45); /* Glow එක වැඩි වෙනවා */
-    }
-}
-
-/* --- 📦 HEADER ROW CONTAINER (MAIN LAYOUT) --- */
-.header-row {
-    display: flex;
-    justify-content: center;  
-    align-items: center;
-    width: 100%;
-    margin-bottom: 25px;        
-    position: relative;        
-    z-index: 1;   
+        // මුළු Screen එක පුරාම රෝඩ් මැප් එකේ ලක්ෂ්‍යයන් සෑදීම
+        while (x < width + 200) {
+            // තරංග ආකාරයට උඩ සහ පල්ලෙහා යාමට සලස්වයි (Up-trends & Down-trends)
+            let waveDirection = Math.random() > 0.5 ? 1 : -1;
+            let waveHeight = 60 + Math.random() * 120;
+            let waveLength = 120 + Math.random() * 100;
             
+            let targetX = x + waveLength;
+            let targetY = y + (waveDirection * waveHeight);
+            
+            // සීමාවන් පාලනය
+            if (targetY < 80) targetY = 80 + Math.random() * 40;
+            if (targetY > height - 80) targetY = height - 80 - Math.random() * 40;
+
+            // අතරමැදි කුඩා කැන්ඩ්ල්ස් ලක්ෂ්‍යයන් පිරවීම (Smooth Wave එකක් සඳහා)
+            let steps = Math.floor(waveLength / 25);
+            for (let i = 1; i <= steps; i++) {
+                let t = i / steps;
+                let currX = x + (targetX - x) * t;
+                let currY = y + (targetY - y) * t;
+                
+                points.push({ x: currX, y: currY });
+
+                // වීඩියෝ එකේ වගේ එක ළඟ පිහිටි ලස්සන කැන්ඩ්ල්ස් සෑදීම
+                let isBullish = (targetY < y); // යන දිශාව අනුව Green/Red තීරණය වේ
+                if (Math.random() > 0.2) { // 80% ක්ම කැන්ඩ්ල්ස් සාදයි
+                    let candleBody = 15 + Math.random() * 30;
+                    candles.push({
+                        x: currX,
+                        open: isBullish ? currY + candleBody/3 : currY - candleBody/3,
+                        close: isBullish ? currY - candleBody/3 : currY + candleBody/3,
+                        high: currY - candleBody/2 - (Math.random() * 8),
+                        low: currY + candleBody/2 + (Math.random() * 8),
+                        isBullish: isBullish
+                    });
+                }
+            }
+            
+            x = targetX;
+            y = targetY;
+        }
+    }
+    generateMarketWave();
+
+    let drawIndex = 0;
+    let pX = points[0].x;
+    let pY = points[0].y;
+
+    function animateLine() {
+        ctx.clearRect(0, 0, width, height);
+        
+        // Background Grid Lines
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.03)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < width; i += 80) {
+            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke();
+        }
+        for (let i = 0; i < height; i += 60) {
+            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke();
+        }
+
+        // 🕯️ වීඩියෝ එකේ වගේ මනරම් ට්‍රේඩින් කැන්ඩ්ල්ස් එකින් එක ඇඳීම
+        candles.forEach(c => {
+            if (c.x <= pX) {
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = c.isBullish ? '#22c55e' : '#ef4444';
+                
+                // Wick (ඉර)
+                ctx.beginPath(); 
+                ctx.moveTo(c.x, c.high); 
+                ctx.lineTo(c.x, c.low); 
+                ctx.stroke();
+                
+                // Body (කොටුව)
+                ctx.fillStyle = c.isBullish ? '#22c55e' : '#ef4444';
+                ctx.fillRect(c.x - 5, Math.min(c.open, c.close), 10, Math.abs(c.open - c.close));
+            }
+        });
+
+        // ඊළඟ Point එක කරා ගමන් කිරීම
+        let target = points[drawIndex + 1];
+        if (target) {
+            let dx = target.x - pX;
+            let dy = target.y - pY;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < 5) {
+                pX = target.x; pY = target.y; drawIndex++;
+            } else {
+                pX += (dx / dist) * 5; // වේගය පාලනය (Speed)
+                pY += (dy / dist) * 5;
+            }
+        } else {
+            // Screen එක ඉවර වුණාම නැවත මුල ඉඳන් අලුත් Wave එකක් පටන් ගනියි
+            drawIndex = 0;
+            generateMarketWave();
+            pX = points[0].x; pY = points[0].y;
+        }
+
+        // ✨ ලයිව් මැජික් පුලිඟු කෑලි (Live Magic Ticks)
+        if (Math.random() > 0.4) {
+            ticks.push({
+                x: pX, y: pY,
+                vx: -(1 + Math.random() * 2), vy: (Math.random() - 0.5) * 2, alpha: 1,
+                color: Math.random() > 0.5 ? '#22c55e' : '#ef4444'
+            });
+        }
+        for (let i = ticks.length - 1; i >= 0; i--) {
+            let t = ticks[i]; t.x += t.vx; t.y += t.vy; t.alpha -= 0.04;
+            if (t.alpha <= 0) { ticks.splice(i, 1); } 
+            else {
+                ctx.beginPath(); ctx.arc(t.x, t.y, 1.5 + Math.random() * 1.5, 0, Math.PI * 2);
+                ctx.fillStyle = t.color; ctx.globalAlpha = t.alpha; ctx.fill(); ctx.globalAlpha = 1;
+            }
+        }
+
+        // 🔴 දිලිසෙන ලයිව් මැජික් ඩොට් එක (Live Pulsing Glow Dot)
+        if (pulseGrowing) { pulseRadius += 0.4; if (pulseRadius > 12) pulseGrowing = false; } 
+        else { pulseRadius -= 0.4; if (pulseRadius < 5) pulseGrowing = true; }
+
+        ctx.beginPath(); ctx.arc(pX, pY, pulseRadius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(239, 68, 68, ${0.4 - (pulseRadius / 35)})`; ctx.fill();
+
+        ctx.beginPath(); ctx.arc(pX, pY, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ef4444'; ctx.shadowBlur = 10; ctx.shadowColor = '#ef4444'; ctx.fill(); ctx.shadowBlur = 0;
+
+        requestAnimationFrame(animateLine);
+    }
+    animateLine();
 }
+function initUIVisuals() {
+    // CSS Animations ටික dynamic ලෙස Inject කිරීම
+    const style = document.createElement('style');
+    style.innerHTML = `
+        /* Copyright Note Styling */
+        .dev-copyright-note {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+            padding: 8px;
+            border-radius: 6px;
+            margin: 15px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+ =================================================================================           
+        /*============== Row Appear & Delete Shake Animations========= */
+======================================================================================        
+        @keyframes trAppear {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+       
+/*=========================================================
+        Image Modal Beautiful Zoom In Animation
+========================================================*/
+        #image-modal {
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+        #modal-preview-img {
+            transform: scale(0.7);
+            opacity: 0;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+        }
+        #image-modal.show-modal #modal-preview-img {
+            transform: scale(1);
+            opacity: 1;
+        }
+    `;
+    document.head.appendChild(style);
 
-
-/*===============================================
-All table titles will use this style for a consistent premium look across the dashboard
-================================================*/
-#tables-title {
-    margin: 0;
-    font-size: 28px;  
-    font-size: 28px;
-    font-weight: 800;
-    font-family: 'Segoe UI', sans-serif;
-    color: #0ed5a8 !important; 
-    letter-spacing: 0.5px;
-    text-shadow: 0 0 4px rgba(14, 213, 168, 0.4),
-                 0 0 12px rgba(14, 213, 168, 0.6),
-                 0 0 20px rgba(14, 213, 168, 0.3);
+    // Sidebar එකේ අන්තිමටම රතු පාට Copyright එක ඇතුළත් කිරීම
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar && !document.querySelector('.dev-copyright-note')) {
+        const copyrightDiv = document.createElement('div');
+        copyrightDiv.className = 'dev-copyright-note';
+        copyrightDiv.innerHTML = `© COPYRIGHT BY DENETH'S SOFTWARES<br>v1.3`;
+        sidebar.appendChild(copyrightDiv);
+    }
     
-    text-align: center;        
-    width: 100%;                
-    white-space: nowrap; 
+    // Animation එක පටන් ගැන්ම
+    initTradingAnimation();
+}
+
+function loadDataFromFirebase() {
+    db.collection("trading_journal").doc("user_data").get().then((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
+            journalTables = data.journalTables || [];
+            methodOptions = data.methodOptions || ['MSS', 'CISD'];
+            sessionOptions = data.sessionOptions || ['London', 'New York'];
+            pairOptions = data.pairOptions || ['EUR/USD', 'GBP/USD'];
+        }
+        renderTableList();
+        initUIVisuals(); 
+    }).catch((error) => {
+        console.error("Error loading data: ", error);
+    });
+}
+
+function saveDataToFirebase() {
+    db.collection("trading_journal").doc("user_data").set({
+        journalTables: journalTables,
+        methodOptions: methodOptions,
+        sessionOptions: sessionOptions,
+        pairOptions: pairOptions
+    })
+    .then(() => {
+        console.log("Data Auto-Saved to Firebase Successfully! 💾");
+    })
+    .catch((error) => {
+        console.error("Error saving data: ", error);
+    });
+}
+
+loadDataFromFirebase();
+
+function showSection(sectionId) {
+    document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+    document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+
+    if(sectionId === 'home') {
+        document.getElementById('home-view').classList.remove('hidden');
+        document.getElementById('btn-home').classList.add('active');
+        initTradingAnimation(); 
+    } else if(sectionId === 'tables') {
+        document.getElementById('tables-list-view').classList.remove('hidden');
+        document.getElementById('btn-tables').classList.add('active');
+        renderTableList();
+    } else if(sectionId === 'settings') { 
+        document.getElementById('settings-view').classList.remove('hidden');
+        document.getElementById('btn-settings').classList.add('active');
+        renderSettingsLists(); 
+    }
+}
+
+function createNewTable() {
+    const oldModal = document.getElementById('custom-popup-modal');
+    if (oldModal) oldModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'custom-popup-modal';
+    modal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:999999;";
     
+    modal.innerHTML = `
+        <div style="background:#1e1b4b; padding:24px; border-radius:12px; width:90%; max-width:380px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.5); border:1px solid #312e81; animation: popupAnim 0.2s ease-out;">
+            <h3 style="margin:0 0 16px 0; color:#ffffff; font-size:18px; font-weight:bold; font-family:sans-serif; letter-spacing:0.5px;">Create New Table</h3>
+            <input type="text" id="new-table-input-field" placeholder="Enter table name here..." style="width:100%; padding:10px 14px; margin-bottom:20px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; font-weight:bold; background:#ffffff; color:#000000; outline:none; box-sizing:border-box;">
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button id="popup-cancel-btn" style="padding:8px 16px; border:none; border-radius:6px; font-size:13px; font-weight:bold; cursor:pointer; background:#64748b; color:#ffffff; transition:opacity 0.2s;">Cancel</button>
+                <button id="popup-create-btn" style="padding:8px 16px; border:none; border-radius:6px; font-size:13px; font-weight:bold; cursor:pointer; background:#3b82f6; color:#ffffff; transition:opacity 0.2s;">Create</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const inputField = document.getElementById('new-table-input-field');
+    const createBtn = document.getElementById('popup-create-btn');
+    const cancelBtn = document.getElementById('popup-cancel-btn');
+
+    setTimeout(() => inputField.focus(), 50);
+
+    cancelBtn.onclick = function() {
+        modal.remove();
+    };
+
+    createBtn.onclick = function() {
+        const tableName = inputField.value.trim();
+        
+        if (!tableName) {
+            alert("Please enter a valid table name!");
+            inputField.focus();
+            return;
+        }
+
+        const newTable = {
+            id: Date.now(),
+            name: tableName,
+            months: {
+                Jan: [], Feb: [], Mar: [], Apr: [], May: [], Jun: [],
+                Jul: [], Aug: [], Sep: [], Oct: [], Nov: [], Dec: []
+            }
+        };
+        
+        journalTables.push(newTable);
+        saveDataToFirebase(); 
+        renderTableList();
+        modal.remove();
+    };
+
+    modal.onclick = function(e) {
+        if (e.target === modal) modal.remove();
+    };
 }
 
 
+function renderTableList() {
+    const grid = document.getElementById('table-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
 
-/* =============================================
-   👋 Waving Emoji Animation
-   ============================================= */
-.wave-emoji {
-    display: inline-block;
-    animation: wave-animation 2.5s infinite; 
-    transform-origin: 70% 70%; 
+    journalTables.forEach(table => {
+        const card = document.createElement('div');
+        card.className = 'table-card';
+        card.innerHTML = `
+            <div style="font-size: 30px;">📊</div>
+            <strong>${table.name}</strong>
+        `;
+        card.onclick = () => openSingleTable(table.id);
+        card.oncontextmenu = (event) => {
+            showContextMenu(event, table.id);
+        };
+        grid.appendChild(card);
+    });
 }
 
-@keyframes wave-animation {
-     0% { transform: rotate( 0.0deg) }
-    10% { transform: rotate(14.0deg) } 
-    20% { transform: rotate(-8.0deg) }
-    30% { transform: rotate(14.0deg) }
-    40% { transform: rotate(-4.0deg) }
-    50% { transform: rotate(10.0deg) }
-    60% { transform: rotate( 0.0deg) } 
-   100% { transform: rotate( 0.0deg) }
-}
+function openSingleTable(tableId) {
+    currentTableId = tableId;
+    currentMonth = 'Jan'; 
+    const tableData = journalTables.find(t => t.id === tableId);
 
-/* =============================================
-   🗂️ TABLE GRID ALIGNMENT
-   ============================================= */
-#table-grid {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    justify-content: flex-start !important; 
-    align-items: center !important;
-    gap: 20px !important;
-    width: 100% !important;
-    padding: 10px 0 !important;
-}
+    document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+    document.getElementById('single-table-view').classList.remove('hidden');
+    document.getElementById('current-table-title').innerText = tableData.name;
 
-/* =============================================
-   🕯️ TRADINGVIEW PREMIUM DARK CARDS
-   ============================================= */
-.table-card {
-    min-width: 160px;
-    max-width: 200px;
-    margin: 0 !important; 
-    text-align: center;
-}
-
-.table-card {
-    background: #1e222d !important; 
-    padding: 30px 20px;
-    border-radius: 14px;
-    text-align: center;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-    transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.table-card::before {
-    content: "";
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background-image: 
-        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-    background-size: 20px 20px;
-    pointer-events: none;
-    z-index: 1;
-}
-
-.table-card h3 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #ffffff !important; 
-    position: relative;
-    z-index: 3;
-    transition: all 0.3s ease;
-}
-
-.table-card::after {
-    content: "This is your table";
-    position: absolute;
-    bottom: -20px;
-    left: 0;
-    width: 100%;
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
-    color: #0ed5a8; 
-    letter-spacing: 1px;
-    opacity: 0;
-    z-index: 3;
-    transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-/* =============================================
-   ✨ CARD HOVER AND ACTIVE STATES
-   ============================================= */
-.table-card:hover {
-    transform: translateY(-6px);
-    background: #242936 !important; 
-    border-color: rgba(14, 213, 168, 0.4) !important; 
-    box-shadow: 0 12px 24px rgba(14, 213, 168, 0.15), 
-                inset 0 0 15px rgba(14, 213, 168, 0.05);
-}
-
-.table-card:hover h3 {
-    transform: translateY(-8px);
-}
-
-.table-card:hover::after {
-    opacity: 1;
-    bottom: 15px; 
-    text-shadow: 0 0 8px rgba(14, 213, 168, 0.6);
-}
-
-.table-card:active {
-    transform: translateY(-2px) scale(0.98);
-}
-
-/* =============================================
-   📊 SINGLE TABLE VIEW HEADER & STATS
-   ============================================= */
-.table-header-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 20px;
-    background: rgb(182, 80, 80);
-    padding: 15px 20px;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(210, 210, 210, 0.05);
-    position: relative;
-    z-index: 1;
-}
-
-.table-header-container h2 { margin: 0; font-size: 22px; }
-
-.stats-bar {
-    display: flex;
-    gap: 12px;
-}
-
-/* =============================================
-   🗓️ MONTH TABS NAVIGATION SYSTEM
-   ============================================= */
-.month-tabs {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 15px;
-    overflow-x: auto;
-    padding-bottom: 6px;
+    document.querySelectorAll('.month-btn').forEach(btn => btn.classList.remove('active'));
     
-    position: relative;
-    z-index: 1;
+    const firstMonthBtn = document.querySelector('.month-tabs .month-btn');
+    if (firstMonthBtn) firstMonthBtn.classList.add('active');
+
+    renderRows(tableData.months[currentMonth]);
 }
 
-.month-tabs::-webkit-scrollbar { height: 5px; }
-.month-tabs::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-
-.month-btn {
-    background-color: white;
-    color: #64748b;
-    border: 1px solid #e2e8f0;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 13px;
-    transition: all 0.15s ease;
-}
-
-.month-btn:hover { background-color: #f8fafc; color: #334155; }
-.month-btn.active {
-    background-color: #0ed5a8;
-    color: #0f172a;
-    border-color: #0ed5a8;
-    font-weight: 700;
-}
-
-/* =============================================
-   📑 SPREADSHEET LAYOUT DESIGN
-   ============================================= */
-/* =============================================
-   🗂️ Table colors an others
-   ============================================= */
-.spreadsheet-container {
-    width: 100% !important;
-    max-height: 500px;       
-    overflow-x: auto !important; 
-    overflow-y: auto !important; /* 👈 3. උඩට/පල්ලෙහාට scroll bar එක (Vertical) auto දානවා */
-    padding: 5px;
-    border-radius: 8px;
-    background: #ee7575; 
+function switchMonth(monthName) {
+    currentMonth = monthName;
     
-    tbody tr:hover {
-    background-color: #5eafff !important; /* 👈 මේ පාට වෙනස් කරන්න */
+    document.querySelectorAll('.month-btn').forEach(btn => btn.classList.remove('active'));
+    if (window.event && window.event.target) {
+        window.event.target.classList.add('active');
+    }
+
+    const tableData = journalTables.find(t => t.id === currentTableId);
+    renderRows(tableData.months[currentMonth]);
+}
+
+function addNewRow() {
+    if (!currentTableId) return;
+    const tableData = journalTables.find(t => t.id === currentTableId);
+    
+    const newRow = { 
+        date: '', 
+        day: '', 
+        pair: '', 
+        side: '', 
+        method: '', 
+        result: '', 
+        session: '',
+        rr: '',
+        entryReason: '',
+        targetPoint: '',
+        notes: '',
+        image: '' 
+    };
+    
+    tableData.months[currentMonth].push(newRow);
+    saveDataToFirebase(); 
+    renderRows(tableData.months[currentMonth]);
+}
+
+function renderRows(rows) {
+    const tbody = document.getElementById('table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    rows.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        tr.className = 'animate-tr'; 
+        
+        if (row.isWeeklyExcelRow) {
+            tr.style.backgroundColor = "#c0a0c9"; 
+            tr.style.fontWeight = "bold";
+            tr.style.textAlign = "center";
+            
+            tr.innerHTML = `
+                <td style="background-color: rgba(0,0,0,0.05);"></td>
+                <td colspan="3" style="color: #1e1b4b; padding: 10px; font-size: 13px;">WEEKLY RESULT</td>
+                <td colspan="2" style="background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;">Profit: ${row.profitCount}</td>
+                <td style="background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca;">Loss: ${row.lossCount}</td>
+                <td style="background-color: #fef9c3; color: #854d0e; border: 1px solid #fef08a;">BE: ${row.beCount}</td>
+                <td colspan="3" style="color: #1e1b4b; font-size: 13px;">Weekly Winning Percentage</td>
+                <td colspan="2" style="background-color: #d1fae5; color: #047857; font-size: 15px; font-weight: 800; border: 1px solid #a7f3d0;">${row.winRate}%</td>
+                <td colspan="2" style="background-color: rgba(0,0,0,0.05);"></td>
+            `;
+            tbody.appendChild(tr);
+            return; 
+        }
+
+        // 🎨 Dropdown එකේ සිලෙක්ට් කරන අගය අනුව වටේ තියෙන Cell (TD) එකේ පසුබිම් පාට Auto තීරණය කරන හැටි
+        const getCellBgStyle = (val) => {
+            if (val === "" || val === "Select...") return ""; 
+            if (val === "Profit" || val === "Buy") return "background-color: #22c55e;"; // ලස්සන කොළ පාට
+            if (val === "Loss" || val === "Sell") return "background-color: #ef4444;"; // ලස්සන රතු පාට
+            if (val === "BE") return "background-color: #eab308;"; // කහ පාට
+            // CISD, MSS, 1:2, 1:3 සහ Sessions වලට Auto නිල්/දම් පාට වැටෙනවා
+            return "background-color: #3b82f6;"; 
+        };
+
+        // ⚪ හැම Dropdown Box එකක්ම 100%ක්ම සුදු පාටින් තියාගන්නා Style එක
+        let whiteDropdownStyle = "width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: bold; text-align: center; padding: 6px; cursor: pointer; font-size: 13px; background-color: #ffffff; color: #000000; outline: none;";
+
+        tr.innerHTML = `
+            <td contenteditable="true" onblur="updateData(${index}, 'date', this.innerText)">${row.date || ''}</td>
+            <td contenteditable="false" style="background-color: #f8fafc; color: #64748b; font-weight: 600;">${row.day || ''}</td>
+   
+            <td style="${getCellBgStyle(row.pair)}">
+                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'pair', this.value, this.parentElement)">
+                    <option value="" ${row.pair === '' ? 'selected' : ''}>Select...</option>
+                    ${pairOptions.map(opt => `<option value="${opt}" ${row.pair === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+                </select>
+            </td>
+            
+            <td style="${getCellBgStyle(row.side)}">
+                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'side', this.value, this.parentElement)">
+                    <option value="" ${row.side === '' ? 'selected' : ''}>Select...</option>
+                    <option value="Buy" ${row.side === 'Buy' ? 'selected' : ''}>Buy</option>
+                    <option value="Sell" ${row.side === 'Sell' ? 'selected' : ''}>Sell</option>
+                </select>
+            </td>
+
+            <td style="${getCellBgStyle(row.method)}">
+                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'method', this.value, this.parentElement)">
+                    <option value="" ${row.method === '' ? 'selected' : ''}>Select...</option>   
+                    ${methodOptions.map(opt => `<option value="${opt}" ${row.method === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+                </select>
+            </td>
+
+            <td style="${getCellBgStyle(row.result)}">
+                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'result', this.value, this.parentElement)">
+                    <option value="" ${row.result === '' ? 'selected' : ''}>Select...</option>
+                    <option value="Profit" ${row.result === 'Profit' ? 'selected' : ''}>Profit</option>
+                    <option value="Loss" ${row.result === 'Loss' ? 'selected' : ''}>Loss</option>
+                    <option value="BE" ${row.result === 'BE' ? 'selected' : ''}>BE</option>
+                </select>
+            </td>
+
+            <td style="${getCellBgStyle(row.session)}">
+                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'session', this.value, this.parentElement)">
+                    <option value="" ${row.session === '' ? 'selected' : ''}>Select...</option>   
+                    ${sessionOptions.map(opt => `<option value="${opt}" ${row.session === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+                </select>
+            </td>
+            
+            <td style="${getCellBgStyle(row.rr)}">
+                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'rr', this.value, this.parentElement)">
+                    <option value="" ${row.rr === '' ? 'selected' : ''}>Select...</option>
+                    <option value="1:2" ${row.rr === '1:2' ? 'selected' : ''}>1:2</option>
+                    <option value="1:3" ${row.rr === '1:3' ? 'selected' : ''}>1:3</option>
+                </select>
+            </td>
+               
+            <td contenteditable="true" onblur="updateData(${index}, 'entryReason', this.innerText)">${row.entryReason || ''}</td>
+            <td contenteditable="true" onblur="updateData(${index}, 'targetPoint', this.innerText)">${row.targetPoint || ''}</td>
+            <td contenteditable="true" onblur="updateData(${index}, 'notes', this.innerText)">${row.notes || ''}</td>
+
+            <td>
+                <div style="display:flex; flex-direction:row; gap:6px; align-items:center; justify-content:center;">
+                    <label class="btn-upload-label" style="background-color: #3b82f6; color: white; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; margin: 0; display: inline-flex; align-items: center;">
+                        📁 Upload
+                        <input type="file" accept="image/*" style="display:none;" data-true-index="${index}" onchange="uploadRowImage(this)">
+                    </label>
+                    <button id="btn-view-img-${index}" class="btn-view-img ${row.image ? '' : 'hidden'}" style="background-color: #8b5cf6; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; margin: 0; display: inline-flex; align-items: center;" onclick="viewRowImage(${index})">👁️ View</button>
+                </div>
+            </td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+
+    calculateStats(rows);
+}
+
+
+function updateData(rowIndex, field, value) {
+    const tableData = journalTables.find(t => t.id === currentTableId);
+    if (!tableData) return;
+    
+    let monthRows = tableData.months[currentMonth];
+    
+    if (monthRows[rowIndex]) {
+        monthRows[rowIndex][field] = value;
+    }
+
+    if (field === 'date') { 
+        let dateStr = value.trim();
+        let formattedDate = dateStr.replace(/\./g, '-'); 
+        let parsedDate = new Date(formattedDate);
+        
+        if (!isNaN(parsedDate.getTime())) {
+            const daysArray = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            let dayName = daysArray[parsedDate.getDay()];
+            
+            monthRows[rowIndex].day = dayName;
+        }
+    }
+
+    refreshWeeklyStats(monthRows);
+}
+
+function updateDropdownData(rowIndex, field, value, cellElement) {
+    const tableData = journalTables.find(t => t.id === currentTableId);
+    if (!tableData) return;
+
+    let monthRows = tableData.months[currentMonth];
+    if (monthRows[rowIndex]) {
+        monthRows[rowIndex][field] = value; 
+    }
+
+    cellElement.className = ''; 
+    if (value === 'Buy') cellElement.classList.add('cell-buy');
+    if (value === 'Sell') cellElement.classList.add('cell-sell');
+    if (value === 'Profit') cellElement.classList.add('cell-profit');
+    if (value === 'Loss') cellElement.classList.add('cell-loss');
+    if (value === 'BE') cellElement.classList.add('cell-be');
+
+    refreshWeeklyStats(monthRows);
+}
+
+function refreshWeeklyStats(monthRows) {
+    for (let i = monthRows.length - 1; i >= 0; i--) {
+        if (monthRows[i].isWeeklyExcelRow) {
+            monthRows.splice(i, 1);
+        }
+    }
+
+    let weeklyProfit = 0;
+    let weeklyLoss = 0;
+    let weeklyBE = 0;
+
+    for (let i = 0; i < monthRows.length; i++) {
+        if (monthRows[i].result === 'Profit') weeklyProfit++;
+        if (monthRows[i].result === 'Loss') weeklyLoss++;
+        if (monthRows[i].result === 'BE') weeklyBE++;
+
+        if (monthRows[i].day === 'Friday') {
+            let totalWinLoss = weeklyProfit + weeklyLoss;
+            let winPercentage = (totalWinLoss > 0) ? ((weeklyProfit / totalWinLoss) * 100).toFixed(0) : 0;
+
+            let excelSummaryRow = {
+                isWeeklyExcelRow: true,
+                profitCount: weeklyProfit,
+                lossCount: weeklyLoss,
+                beCount: weeklyBE,
+                winRate: winPercentage
+            };
+
+            monthRows.splice(i + 1, 0, excelSummaryRow);
+            weeklyProfit = 0;
+            weeklyLoss = 0;
+            weeklyBE = 0;
+            i++; 
+        }
+    }
+
+    saveDataToFirebase(); 
+    renderRows(monthRows);
+}
+
+function calculateStats(rows) {
+    let profitCount = 0;
+    let lossCount = 0;
+    let beCount = 0;
+
+    rows.forEach(row => {
+        if (!row.isWeeklyExcelRow) {
+            if (row.result === 'Profit') profitCount++;
+            if (row.result === 'Loss') lossCount++;
+            if (row.result === 'BE') beCount++;
+        }
+    });
+
+    let totalWinLoss = profitCount + lossCount;
+    let monthlyWinRate = (totalWinLoss > 0) ? ((profitCount / totalWinLoss) * 100).toFixed(0) : 0;
+
+    const profitEl = document.getElementById('stat-profit');
+    const lossEl = document.getElementById('stat-loss');
+    const beEl = document.getElementById('stat-be');
+    const monthlyWinRateEl = document.getElementById('stat-monthly-winrate');
+
+    if (profitEl) profitEl.innerText = profitCount;
+    if (lossEl) lossEl.innerText = lossCount;
+    if (beEl) beEl.innerText = beCount;
+
+    if (monthlyWinRateEl) {
+        monthlyWinRateEl.innerText = monthlyWinRate + "%";
+    }
+}
+
+function uploadRowImage(input) {
+    const index = parseInt(input.getAttribute('data-true-index'));
+    const file = input.files[0];
+    if (file) {
+        const formData = new FormData();
+        formData.append("image", file);
+
+        // මෙතනට ඔයාගේ අලුත්ම API Key එක ලස්සනට සෙට් කරලා තියෙන්නේ මචං
+        fetch("https://api.imgbb.com/1/upload?key=2218858316a9a4b62dbdb33a193bc2f5", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const downloadURL = data.data.url;
+                const tableData = journalTables.find(t => t.id === currentTableId);
+                
+                if (tableData && tableData.months[currentMonth][index]) {
+                    tableData.months[currentMonth][index].image = downloadURL;
+                }
+                
+                const viewBtn = document.getElementById(`btn-view-img-${index}`);
+                if (viewBtn) viewBtn.classList.remove('hidden');
+                
+                saveDataToFirebase();
+
+                // Custom Notification Toast
+                const oldToast = document.getElementById('custom-toast-msg');
+                if (oldToast) oldToast.remove();
+
+                const toast = document.createElement('div');
+                toast.id = 'custom-toast-msg';
+                toast.style = "position:fixed; top:20px; right:20px; background:#10b981; color:#ffffff; padding:14px 24px; border-radius:8px; font-weight:bold; font-family:sans-serif; font-size:14px; box-shadow:0 5px 15px rgba(0,0,0,0.3); z-index:999999; animation: toastSlide 0.3s ease-out; border-left:5px solid #047857;";
+                toast.innerHTML = "📈 Chart Image Saved Successfully!";
+                
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.animation = "toastFadeOut 0.3s ease-in forwards";
+                    setTimeout(() => toast.remove(), 300);
+                }, 2500);
+            } else {
+                alert("Upload failed via API");
+            }
+        })
+        .catch(error => {
+            alert("Error uploading image: " + error.message);
+        });
+    }
+}
+
+function viewRowImage(index) {
+    const tableData = journalTables.find(t => t.id === currentTableId);
+    if (!tableData) return;
+    const rowData = tableData.months[currentMonth][index];
+    if (rowData && rowData.image) {
+        const modal = document.getElementById('image-modal');
+        const modalImg = document.getElementById('modal-preview-img');
+        modalImg.src = rowData.image;
+        
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.add('show-modal'); 
+        }, 10);
+    }
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('image-modal');
+    if (!modal) return;
+    modal.classList.remove('show-modal');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300);
+}
+
+function showContextMenu(event, tableId) {
+    event.preventDefault(); 
+    removeContextMenu();
+
+    const contextMenu = document.createElement('div');
+    contextMenu.id = 'custom-context-menu';
+    contextMenu.innerText = '🗑️ Delete Table';
+    
+    contextMenu.style.top = `${event.pageY}px`;
+    contextMenu.style.left = `${event.pageX}px`;
+
+    contextMenu.onclick = (e) => {
+        e.stopPropagation();
+        if (confirm("ඔබට විශ්වාසද මෙම Table එක සම්පූර්ණයෙන්ම මකා දැමීමට අවශ්‍ය බව?")) {
+            journalTables = journalTables.filter(t => t.id !== tableId);
+            saveDataToFirebase(); 
+            renderTableList();
+        }
+        removeContextMenu();
+    };
+
+    document.body.appendChild(contextMenu);
+    document.body.onclick = removeContextMenu;
+}
+
+function removeContextMenu() {
+    const menu = document.getElementById('custom-context-menu');
+    if (menu) menu.remove();
+}
+
+function renderSettingsLists() {
+    const methodList = document.getElementById('settings-method-list');
+    if(methodList) {
+        methodList.innerHTML = '';
+        methodOptions.forEach((opt, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span>${opt}</span>
+
+            `;
+            methodList.appendChild(li);
+        });
+    }
+
+    const sessionList = document.getElementById('settings-session-list');
+    if(sessionList) {
+        sessionList.innerHTML = '';
+        sessionOptions.forEach((opt, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span>${opt}</span>
+             
+            `;
+            sessionList.appendChild(li);
+        });
+    }
+
+    const pairList = document.getElementById('settings-pair-list');
+    if(pairList) {
+        pairList.innerHTML = '';
+        pairOptions.forEach((opt, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span>${opt}</span>
+              
+            `;
+            pairList.appendChild(li);
+        });
+    }
+}
+
+function addMethodOption() {
+    const input = document.getElementById('txt-new-method');
+    if (!input) return;
+    const value = input.value.trim().toUpperCase();
+
+    if (value === '') return;
+    if (methodOptions.includes(value)) {
+        alert('Alert: This method already exists!');
+        return;
+    }
+
+    methodOptions.push(value);
+    input.value = '';
+    saveDataToFirebase(); 
+    renderSettingsLists();
+}
+
+function addSessionOption() {
+    const input = document.getElementById('txt-new-session');
+    if(!input) return;
+    const value = input.value.trim().toUpperCase();
+
+    if (value === '') return;
+    if (sessionOptions.includes(value)) {
+        alert('Alert: This session already exists!');
+        return;
+    }
+
+    sessionOptions.push(value);
+    input.value = '';
+    saveDataToFirebase(); 
+    renderSettingsLists();
+}
+
+function addPairOption() {
+    const input = document.getElementById('txt-new-pair');
+    if(!input) return;
+    const value = input.value.trim().toUpperCase();
+
+    if (value === '') return;
+    if (pairOptions.includes(value)) {
+        alert('Alert: This pair already exists!');
+        return;
+    }
+
+    pairOptions.push(value);
+    input.value = '';
+    saveDataToFirebase(); 
+    renderSettingsLists();
+}
+
+
+
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content') || document.querySelector('main');
+
+    if (sidebar) {
+        sidebar.classList.toggle('collapsed');
+    }
+    
+    if (mainContent) {
+        mainContent.classList.toggle('expanded');
+    }
+}
+/*==================================================
+                  cusor animetion
+=====================================================*/
+
+
+const canvas = document.getElementById('trading-bg-canvas');
+const ctx = canvas.getContext('2d');
+const cursor = document.getElementById('custom-glow-cursor');
+
+let width = canvas.width = window.innerWidth;
+let height = canvas.height = window.innerHeight;
+
+window.addEventListener('mousemove', (e) => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+});
+
+window.addEventListener('mousedown', () => {
+    cursor.style.width = '30px';
+    cursor.style.height = '30px';
+    cursor.style.background = 'rgba(34, 197, 94, 0.5)';
+    cursor.style.borderColor = '#22c55e';
+    cursor.style.boxShadow = '0 0 20px #22c55e';
+});
+
+window.addEventListener('mouseup', () => {
+    cursor.style.width = '20px';
+    cursor.style.height = '20px';
+    cursor.style.background = 'rgba(14, 213, 168, 0.4)';
+    cursor.style.borderColor = '#0ed5a8';
+    cursor.style.boxShadow = '0 0 15px #0ed5a8, 0 0 30px rgba(14, 213, 168, 0.6)';
+});
+
+const chartsCount = 3;
+const charts = [];
+
+for (let i = 0; i < chartsCount; i++) {
+    charts.push({
+        y: height / 2 + (i - 1) * 150,
+        candles: [],
+        maxCandles: Math.floor(width / 25),
+        trend: Math.random() > 0.5 ? 1 : -1
+    });
+}
+
+function generateInitialData() {
+    charts.forEach(chart => {
+        let currentY = chart.y;
+        for (let i = 0; i < chart.maxCandles; i++) {
+            let change = (Math.random() * 40 - 20) + (chart.trend * 5);
+            let open = currentY;
+            let close = currentY + change;
+            let high = Math.max(open, close) + Math.random() * 15;
+            let low = Math.min(open, close) - Math.random() * 15;
+            
+            chart.candles.push({ open, close, high, low, isGreen: close < open });
+            currentY = close;
+
+            if (Math.random() > 0.85) chart.trend *= -1;
+        }
+    });
+}
+
+function drawTradingCharts() {
+    ctx.clearRect(0, 0, width, height);
+    
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < width; x += 50) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+    }
+    for (let y = 0; y < height; y += 50) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+    }
+
+    charts.forEach(chart => {
+        chart.candles.forEach((candle, index) => {
+            let x = index * 25 + 10;
+            
+            ctx.strokeStyle = candle.isGreen ? 'rgba(34, 197, 94, 0.5)' : 'rgba(239, 68, 68, 0.5)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(x, candle.high);
+            ctx.lineTo(x, candle.low);
+            ctx.stroke();
+
+            ctx.fillStyle = candle.isGreen ? 'rgba(34, 197, 94, 0.7)' : 'rgba(239, 68, 68, 0.7)';
+            let bodyHeight = candle.close - candle.open;
+            ctx.fillRect(x - 6, candle.open, 12, bodyHeight || 1);
+        });
+
+        let lastCandle = chart.candles[chart.candles.length - 1];
+        let nextTrend = Math.random() > 0.8 ? chart.trend * -1 : chart.trend;
+        chart.trend = nextTrend;
+
+        let change = (Math.random() * 30 - 15) + (chart.trend * 4);
+        let open = lastCandle.close;
+        let close = open + change;
+
+        if (close < 50 || close > height - 50) {
+            chart.trend *= -1;
+            close = open + (chart.trend * 10);
+        }
+
+        let high = Math.max(open, close) + Math.random() * 10;
+        let low = Math.min(open, close) - Math.random() * 10;
+
+        chart.candles.shift();
+        chart.candles.push({ open, close, high, low, isGreen: close < open });
+    });
+}
+
+window.addEventListener('resize', () => {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+});
+
+generateInitialData();
+setInterval(drawTradingCharts, 300);
+
+
+
+
+
+
+
+
+
+
+
+
+
+document.getElementById('download-excel-btn').addEventListener('click', () => {
+    const table = document.getElementById('my-trading-table');
+    const dataMatrix = [];
+
+    const headers = [];
+    const headerCells = table.querySelectorAll('thead tr th');
+    
+    headerCells.forEach((th, index) => {
+        if (index === 0 || index === headerCells.length - 1) return;
+        headers.push(th.innerText.trim());
+    });
+    dataMatrix.push(headers);
+
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const rowData = [];
+        const cells = row.cells;
+        
+        if (cells.length < 2) return;
+
+        for (let i = 1; i < cells.length - 1; i++) {
+            const cell = cells[i];
+            
+            const select = cell.querySelector('select');
+            if (select) {
+                rowData.push(select.value && select.value !== 'Select...' ? select.value : "");
+                continue;
+            }
+
+            const input = cell.querySelector('input');
+            if (input) {
+                rowData.push(input.value ? input.value : "");
+                continue;
+            }
+
+            rowData.push(cell.innerText.trim());
+        }
+
+        if (rowData.some(val => val !== "")) {
+            dataMatrix.push(rowData);
+        }
+    });
+
+    const worksheet = XLSX.utils.aoa_to_sheet(dataMatrix);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Trading Journal");
+
+    XLSX.writeFile(workbook, "Trading_Journal_Master.xlsx");
+});
+
+
+
+document.getElementById('download-pdf-btn').addEventListener('click', () => {
+    const table = document.getElementById('my-trading-table');
+
+    html2canvas(table, {
+        scale: 2, 
+        useCORS: true, 
+        backgroundColor: '#040814', 
+        logging: false
+    }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('l', 'mm', 'a4');
+        
+        const imgWidth = 280; 
+        const pageHeight = 210; 
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        let heightLeft = imgHeight;
+        let position = 10; 
+
+        pdf.setFont("Helvetica", "bold");
+        pdf.setFontSize(16);
+        pdf.setTextColor(255, 255, 255); 
+
+        pdf.addImage(imgData, 'PNG', 8, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight + 10;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 8, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+
+        pdf.save('Trading_Journal_Snapshot.pdf');
+    });
+});
+
+
+
+
+function exportJSONBackup() {
+ 
+    if (typeof journalTables !== 'undefined' && journalTables.length > 0) {
+        
+    
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(journalTables, null, 2));
+        
+    
+        const today = new Date().toISOString().split('T')[0];
+        const downloadAnchor = document.createElement('a');
+        
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `Trading_Journal_Backup_${today}.json`);
+        document.body.appendChild(downloadAnchor);
+        
+        downloadAnchor.click(); 
+        downloadAnchor.remove();
+        
+ 
+        alert("📊 මුළු ඩේටාබේස් එකම සාර්ථකව PC එකට Backup කරගත්තා මචං!");
+    } else {
+        alert("මකන්න හෝ Backup කරන්න තරම් ඩේටා කිසිවක් ටේබල් එකේ නැහැ!");
     }
 }
 
 
-table {
-    width: 100% !important;
-    min-width: 1200px !important; 
-    table-layout: fixed;
-    border-collapse: collapse;
-}
 
-.table-responsive {
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #668ec3;
-    border-radius: 8px;
-}
+function importJSONBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
 
-.table-responsive::-webkit-scrollbar { height: 8px; }
-.table-responsive::-webkit-scrollbar-track { background: #f1f5f9; }
-.table-responsive::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: auto !important; 
-}
-
-th, td {
-    padding: 10px 14px;
-    font-size: 13px;
-    text-align: center;
-    border-bottom: 1px solid #ff0f0f;
-    border-right: 1px solid #ff0000;
-    white-space: nowrap !important; 
-}
-
-th {
-    background-color: #fa3939;
-    color: #fbfdff;
-    font-weight: 700;
-    position: sticky;
-    top: 0;
-    text-transform: uppercase;
-    font-size: 11px;
-    letter-spacing: 0.5px;
-    border-bottom: 2px solid #3b93ff;
-}
-
-tbody tr:hover {
-    background-color: #f8fafc;
-}
-
-td[contenteditable="true"] {
-    min-width: 100px; 
-    max-width: none !important; 
-    outline: none;
-    cursor: text;
-    transition: all 0.15s ease;
-}
-
-td[contenteditable="true"]:focus {
-    background-color: #fb0004c5;
-    box-shadow: inset 0 0 0 2px #0ed5a8;
-}
-
-/* 📅 Table එක ඇතුළේ තියෙන Date Input එක ලස්සන කිරීම */
-table input[type="date"] {
-    background-color: #074ff8 !important; /* Date box එකේ පසුබිම් පාට */
-    color: #000000 !important;            /* 👈 අකුරු සහ දිනවල පාට (Neon green වගේ ලස්සන පාටක්) */
-    border: 1px solid #334155 !important;
-    padding: 5px !important;
-    border-radius: 4px !important;
-    font-weight: bold;
-}
-
-/* Date picker icon එකේ පාට වෙනස් කිරීමට (Chrome/Edge සඳහා) */
-table input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(1); /* 👈 Calendar icon එක සුදු පාට කරනවා (dark theme එකට ගැලපෙන්න) */
-    cursor: pointer;
-}
-
-/* =============================================
-   🔘 INTERACTIVE BUTTONS & INPUT STYLES
-   ============================================= */
-
-
-
-.btn-row {
-    background: rgba(6, 182, 212, 0.1);
-    border: 1px solid rgba(6, 182, 212, 0.4);
-    color: #22d3ee;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 13px;
-    padding: 8px 16px;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.btn-row:hover {
-    background: #06b6d4;
-    color: #ffffff;
-    border-color: #22d3ee;
-    transform: translateY(-2px);
-    box-shadow: 0 0 15px rgba(6, 182, 212, 0.6);
-}
-
-.btn-add {
-    background: rgba(34, 197, 94, 0.1);
-    border: 1px solid rgba(34, 197, 94, 0.4);
-    color: #4ade80;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 13px;
-    padding: 8px 16px;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.btn-add:hover {
-    background: #22c55e;
-    color: #ffffff;
-    border-color: #4ade80;
-    transform: translateY(-2px);
-    box-shadow: 0 0 15px rgba(34, 197, 94, 0.6);
-}
-
-.btn-back {
-    background: rgba(30, 27, 75, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #cbd5e1;
-    cursor: pointer;
-    font-weight: 600;
-    margin-bottom: 20px;
-    font-size: 13px;
-    padding: 8px 16px;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.btn-back:hover {
-    background: #3b82f6;
-    color: #ffffff;
-    border-color: #60a5fa;
-    transform: translateX(-4px);
-    box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
-}
-
-.import-container {
-    margin: 15px;
-    display: inline-block;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* json file open */
-.btn-import {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 40px;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: #ffffff;
-    padding: 10px 60px;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1);
-    transition: all 0.3s ease;
+            const importedData = JSON.parse(e.target.result);
+            
+            if (Array.isArray(importedData)) {
+          
+                journalTables = importedData;
+                
+             
+                saveDataToFirebase(); 
+                
+        
+                if (typeof renderTables === 'function') {
+                    renderTables(); 
+                } else if (typeof loadJournalData === 'function') {
+                    loadJournalData();
+                }
+                
+                alert("✅ JSON Backup එක සාර්ථකව Import කරා මචං! දැන් ඔක්කොම ඩේටා බලාගන්න පුළුවන්.");
+            } else {
+                alert("අවුලක් තියෙනවා! මේක වැරදි ෆයිල් එකක් වගෙයි.");
+            }
+        } catch (err) {
+            alert("ෆයිල් එක කියවීමේදී දෝෂයක් වැටුණා: " + err.message);
+        }
+    };
     
-}
-
-.btn-import:hover {
-    background: linear-gradient(135deg, #059669 0%, #047857 100%);
-    box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.2);
-    transform: translateY(-2px);
-}
-
-.btn-import:active {
-    transform: translateY(1px);
-    box-shadow: 0 2px 4px 0 rgba(16, 185, 129, 0.2);
-}
-
-.btn-import:hover .btn-icon {
-    animation: bounceIcon 0.5s ease infinite alternate;
-}
-
-@keyframes bounceIcon {
-    from {
-        transform: translateY(0);
-    }
-    to {
-        transform: translateY(-3px);
-    }
-}
-
-/* jason file save */
-.btn-export {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
-    color: #ffffff;
-    padding: 12px 26px;
-    border: none;
-    border-radius: 50px; 
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.2);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-    position: relative;
-    overflow: hidden;
-}
-
-
-.btn-export:hover {
-    transform: translateY(-4px) scale(1.03); 
-    background: linear-gradient(135deg, #5a52ea 0%, #4338ca 100%);
-    
-    box-shadow: 0 0 25px rgba(79, 70, 229, 0.6), 0 8px 20px rgba(79, 70, 229, 0.4); 
-}
-
-
-.btn-export:active {
-    transform: translateY(-1px) scale(0.98);
-    box-shadow: 0 0 10px rgba(79, 70, 229, 0.4);
-}
-
-
-.btn-icon {
-    display: inline-block;
-    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.btn-export:hover .btn-icon {
-    transform: rotate(360deg) scale(1.2);
-}
-
-/* =============================================
-   ✨ PREMIUM ADD NEW TABLE BUTTON (LEFT ALIGNED)
-   ============================================= */
-.btn-primary-container {
-    display: flex;
-    justify-content: flex-start;
-    width: 100%;
-    margin-bottom: 60px;
-    padding-left: 200px;
-}
-
-#btn-add-table.btn-primary {
-    background: linear-gradient(135deg, #0ed5a8, #0aa381);
-    color: #0f172a; 
-    border: none;
-    cursor: pointer;
-    font-weight: 700;
-    font-size: 14px;
-    padding: 12px 24px;
-    border-radius: 50px;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 4px 15px rgba(14, 213, 168, 0.25), 
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-#btn-add-table.btn-primary:hover {
-    background: linear-gradient(135deg, #12ecd1, #0ed5a8);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(14, 213, 168, 0.45), 
-                0 0 15px rgba(14, 213, 168, 0.2);
-}
-
-
-#btn-add-table.btn-primary:active {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(14, 213, 168, 0.2);
-}
-
-
-
-
-/* 🎴 Modal Background Overlay */
-.prompt-modal {
-    display: none;
-    position: fixed;
-    z-index: 10000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    align-items: center;
-    justify-content: center;
-}
-
-/* 📦 Main Popup Box Style */
-.prompt-modal-content {
-    background-color: #1e1b4b; /* Dark Blue තීම් එක */
-    padding: 24px;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 400px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-    text-align: center;
-    animation: popupSlideIn 0.3s ease-out;
-    border: 1px solid #312e81;
-}
-
-.prompt-modal-content h3 {
-    margin-top: 0;
-    margin-bottom: 16px;
-    color: #ffffff;
-    font-size: 18px;
-    font-weight: bold;
-    letter-spacing: 0.5px;
-    font-family: sans-serif;
-}
-
-/* ✍️ Input Box Style (වටකුරු සුදු බොක්ස් එක) */
-.prompt-modal-content input[type="text"] {
-    width: 100%;
-    padding: 10px 14px;
-    margin-bottom: 20px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px; /* වටකුරු හැඩය */
-    font-size: 14px;
-    font-weight: bold;
-    background-color: #ffffff; /* පිරිසිදු සුදු පසුබිම */
-    color: #000000;
-    outline: none;
-    box-sizing: border-box;
-    transition: border-color 0.2s;
-}
-
-.prompt-modal-content input[type="text"]:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-}
-
-/* 🔘 Buttons Layout */
-.prompt-modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-}
-
-.prompt-modal-actions button {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.prompt-modal-actions button:hover {
-    opacity: 0.9;
-}
-
-/* Cancel Button */
-.prompt-modal-actions .btn-cancel {
-    background-color: #64748b;
-    color: #ffffff;
-}
-
-/* Confirm Button */
-.prompt-modal-actions .btn-confirm {
-    background-color: #3b82f6;
-    color: #ffffff;
-}
-
-/* 🎬 Animation */
-@keyframes popupSlideIn {
-    from {
-        transform: translateY(-20px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-/* =============================================
-   🛑 DROPDOWNS & CONDITIONAL CELL STYLES
-   ============================================= */
-.table-dropdown {
-    width: auto !important; 
-    min-width: 110px; 
-    padding: 5px 15px; 
-    color: #000000 !important;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    background: white;
-    font-weight: 600;
-    font-size: 12px;
-    text-align: center;
-    cursor: pointer;
-}
-
-.cell-buy { background-color: #bbf7d0 !important; color: #166534 !important; font-weight: 700; }
-.cell-sell { background-color: #fecaca !important; color: #991b1b !important; font-weight: 700; }
-.cell-profit { background-color: #16ef65 !important; color: #166534 !important; font-weight: 700; }
-.cell-loss { background-color: #ff7b7b !important; color: #991b1b !important; font-weight: 700; }
-.cell-be { background-color: #ffdb71 !important; color: #838504 !important; font-weight: 700; }
-.cell-london { background-color: #dbeafe !important; color: #1e40af !important; font-weight: 700; }
-.cell-newyork { background-color: #ffdfb5 !important; color: #9a3412 !important; font-weight: 700; }
-.cell-mss { background-color: #7ec9fb !important; color: #0369a1 !important; font-weight: 800; border: 1px solid #bae6fd !important; }
-.cell-cisd { background-color: #cfa1ff !important; color: #6b21a8 !important; font-weight: 800; border: 1px solid #e9d5ff !important; }
-
-.cell-buy .table-dropdown, .cell-sell .table-dropdown,
-.cell-profit .table-dropdown, .cell-loss .table-dropdown, .cell-be .table-dropdown,
-.cell-london .table-dropdown, .cell-newyork .table-dropdown,
-.cell-mss .table-dropdown, .cell-cisd .table-dropdown {
-    background: transparent !important;
-    border-color: transparent !important;
-    color: inherit !important;
-}
-
-/* =============================================
-   ⚙️ SYSTEM SETTINGS CONTROLS
-   ============================================= */
-.settings-container {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 15px;
-    width: 95%;
-    max-width: 1200px;
-    margin: 20px auto;
-    padding: 20px;
-}
-
-.settings-card {
-    position: relative;
-    background: linear-gradient(-45deg, #a8d1fb, #c0e0ff, #93c5fd, #a8d1fb);
-    background-size: 400% 400%;
-    animation: settingsBgGradient 12s ease infinite;
-    padding: 16px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
-    flex: 1;
-    min-width: 0;
-    height: 300px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.settings-card h3 {
-    margin-top: 0;
-    color: #1e293b;
-    font-size: 15px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.6);
-    margin-bottom: 10px;
-}
-
-.settings-card ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    flex-grow: 1;
-    max-height: 170px;
-    overflow-y: auto;
-}
-
-.settings-card li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 10px;
-    background: rgba(255, 255, 255, 0.9);
-    margin-bottom: 5px;
-    border-radius: 6px;
-    font-weight: 600;
-    color: #1e293b;
-    font-size: 12px;
-}
-
-.settings-inputs input {
-    padding: 6px 10px;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    flex: 1;
-    outline: none;
-    font-size: 12px;
-    background: rgba(255, 255, 255, 0.95);
-}
-
-.settings-inputs button {
-    background: #0ed5a8;
-    color: #1e293b;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-/* =============================================
-   🖱️ CUSTOM CONTEXT MENU
-   ============================================= */
-#custom-context-menu {
-    position: absolute;
-    background: white;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    color: #ef4444;
-    font-weight: 600;
-    z-index: 1000;
-}
-
-/* =============================================
-   🛑 MODAL PREVIEW OVERLAY SYSTEM
-   ============================================= */
-.modal-overlay {
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%;
-    background-color: rgba(15, 23, 42, 0.8); 
-    display: flex;
-    justify-content: center; 
-    align-items: center; 
-    z-index: 9999;
-}
-
-.modal-content { 
-    position: relative; 
-    max-width: 85%; 
-    max-height: 85%; 
-    background: white; 
-    padding: 6px; 
-    border-radius: 8px; 
-}
-
-.modal-content img { 
-    max-width: 100%; 
-    max-height: 80vh; 
-    display: block; 
-    object-fit: contain; 
-    border-radius: 4px; 
-}
-
-.modal-close {
-    position: absolute; 
-    top: -12px; 
-    right: -12px; 
-    background: #ef4444; 
-    color: white;
-    width: 26px; 
-    height: 26px; 
-    border-radius: 50%; 
-    text-align: center; 
-    line-height: 24px;
-    font-size: 18px; 
-    cursor: pointer; 
-    font-weight: bold;
-}
-
-/* =============================================
-   🖼️ MODERN MODAL WITH PREMIUM DARK DESIGN
-   ============================================= */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.85); 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999; 
-}
-
-.modal-content {
-    position: relative;
-    max-width: 85%;
-    max-height: 85%;
-    background: #1e293b; 
-    padding: 10px;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-}
-
-#modal-preview-img {
-    max-width: 100%;
-    max-height: 80vh;
-    display: block;
-    border-radius: 8px;
-    object-fit: contain;
-}
-
-/* =============================================
-   ❌ MODERN CLOSE BUTTON DESIGN
-   ============================================= */
-.close-btn-modern {
-    position: absolute;
-    top: -15px;
-    right: -15px;
-    background-color: #ef4444; 
-    color: white !important;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 22px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    border: 2px solid #ffffff;
-    transition: transform 0.2s ease, background-color 0.2s ease;
-    z-index: 10000; 
-}
-
-.close-btn-modern:hover {
-    background-color: #dc2626;
-    transform: scale(1.1);
-}
-
-.hidden {
-    display: none !important;
-}
-
-/* =============================================
-   📉 MY RULES PREMIUM DOCK BOX
-   ============================================= */
-/* =============================================
-   📉 MAIN CONTAINER STYLE (MY RULES)
-   ============================================= */
-.My-Rules {
-    background: #ffffff; 
-    padding: 30px 35px;
-    border-radius: 20px;
-    margin-top: 35px;
-    max-width: 580px;
-    position: relative;
-    overflow: hidden;
-    
-    /* Waman paththe rathu border eka saha premium shadow */
-    border-left: 6px solid #ef4444; 
-    margin-left: auto;
-    margin-right: auto;
-    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.06), 0 5px 15px rgba(0, 0, 0, 0.02);
-    
-    /* Box eka load weddi smooth floating animation ekak dima */
-    animation: floatingFadeIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-/* =============================================
-   🖱️ CONTAINER HOVER STATE EFFECTS
-   ============================================= */
-.My-Rules:hover {
-    /* Mouse eka yaddi box eka lassanata uda gihin rathu neon shadow ekak nirmaanaya kireema */
-    transform: translateY(-8px) scale(1.02);
-    border-left-color: #ff3838;
-    box-shadow: 0 25px 40px -10px rgba(239, 68, 68, 0.18), 
-                0 10px 20px -5px rgba(0, 0, 0, 0.04);
-}
-/* ============================================= 
-   🎬 1. SLIDESHOW CONTAINER (LEFT ALIGNED)
-============================================= */
-.slideshow-container {
-    max-width: 100%;
-    width: 550px;
-    height: 320px;
-    
-    /* වම් පැත්තේ Menu එක ගාවටම සෙට් කර ඉහළින් තැබීම */
-    position: absolute !important; 
-    z-index: 20;               
-    top: 250px;            
-    left: 40px !important;    
-    margin: 0 !important;     
-    
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-    border: 3px solid rgba(255, 255, 255, 0.1);
-    background: #0f172a;
-    pointer-events: auto !important;
-}
-
-/* ============================================= 
-   🔥 2. NEW MY RULES PREMIUM BOX (UNDER SLIDESHOW)
-============================================= */
-.slideshow-container {
-    max-width: 100%;
-    width: 550px;
-    height: 320px;
-    position: absolute !important; 
-    z-index: 20;               
-    top: 250px;            
-    left: 40px !important;    
-    margin: 0 !important;     
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-    border: 3px solid rgba(255, 255, 255, 0.1);
-    background: #0f172a;
-    pointer-events: auto !important;
-}
-
-.my-rules-card {
-    width: 550px;             
-    padding: 20px 25px;
-    position: absolute !important;
-    z-index: 20;
-    top: 600px;               
-    left: 40px !important;
-    margin: 0 !important;
-    border-radius: 16px;
-    background: #0f172a;
-    border: 3px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-}
-
-.rules-card-title {
-    margin: 0 0 15px 0;
-    font-size: 22px;
-    font-weight: 700;
-    font-family: 'Segoe UI', sans-serif;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.rules-card-title .fire-emoji {
-    animation: firePulse 1.5s ease-in-out infinite alternate;
-}
-
-.rules-card-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.rules-card-list li {
-    font-size: 15px;
-    font-weight: 500;
-    color: #cbd5e1;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-family: 'Segoe UI', sans-serif;
-}
-
-.rules-card-list li:last-child {
-    margin-bottom: 0;
-}
-
-.bullet-check {
-    width: 8px;
-    height: 8px;
-    background-color: #ef4444;
-    border-radius: 50%;
-    display: inline-block;
-    box-shadow: 0 0 8px #ef4444;
-}
-
-@keyframes firePulse {
-    0% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(239,68,68,0.4)); }
-    100% { transform: scale(1.15); filter: drop-shadow(0 0 8px rgba(239,68,68,0.8)); }
-}
-/* =============================================
-   📝 HEADER TITLE STYLE (H2)
-   ============================================= */
-.My-Rules h2 {
-    margin-top: 0;
-    font-size: 22px;
-    color: #0f172a;
-    margin-bottom: 22px;
-    font-weight: 850;
-    letter-spacing: 0.5px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-/* =============================================
-   📋 UNORDERED LIST RESET (UL)
-   ============================================= */
-.My-Rules ul { 
-    margin: 0; 
-    padding-left: 0; 
-    list-style: none; 
-}
-
-/* =============================================
-   🔹 LIST ITEMS INDIVIDUAL STYLE (LI)
-   ============================================= */
-.My-Rules li {
-    font-size: 14px;
-    color: #334155;
-    margin-bottom: 14px;
-    font-weight: 700; 
-    padding: 14px 18px;
-    background: #f8fafc;
-    border-radius: 10px;
-    border-left: 3px solid transparent;
-    display: flex;
-    align-items: center;
-    
-    /* List items hover weddi smooth wenna transition dima */
-    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-/* =============================================
-   🖱️ LIST ITEM HOVER ANIMATION STATE
-   ============================================= */
-.My-Rules li:hover {
-    /* Mouse eka li mathata yaddi wam paththen rathu wenna border eka mavee, dakhunata sliding veema */
-    background: #fff5f5; 
-    color: #e11d48; 
-    padding-left: 24px; 
-    border-left: 4px solid #ef4444; 
-    transform: translateX(6px);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.05);
-}
-
-/* =============================================
-   ✨ FLOATING ENTRANCE KEYFRAMES ANIMATION
-   ============================================= */
-@keyframes floatingFadeIn {
-    0% { 
-        opacity: 0; 
-        transform: translateY(50px); 
-    }
-    100% { 
-        opacity: 1; 
-        transform: translateY(0); 
-    }
-}
-
-/* =============================================
-   📊 STATISTICAL RESULT COUNTERS
-   ============================================= */
-.m-result {
-    font-size: 14px;
-    font-weight: 700;
-    color: #475569;
-    text-transform: uppercase;
-    background: #f1f5f9;
-    padding: 8px 14px;
-    border-radius: 8px;
-    margin-right: 8px;
-    border-left: 4px solid #6366f1;
-}
-
-.stat-box {
-    font-size: 14px;
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.stat-box.profit { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-.stat-box.loss { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-.stat-box.be { background-color: #fef9c3; color: #854d0e; border: 1px solid #fef08a; }
-.stat-box.winrate { background-color: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; margin-left: auto; }
-
-/* =============================================
-   🍔 HAMBURGER & RESPONSIVE COLLAPSE ALIGNMENT
-   ============================================= */
-.toggle-hamburger-btn {
-    font-size: 24px;
-    background: #1e293b !important;
-    border: none;
-    color: #ffffff !important;
-    cursor: pointer;
-    padding: 6px 12px;
-    border-radius: 6px;
-    position: fixed !important;
-    top: 15px;
-    left: 15px;
-    z-index: 99999 !important;
-    opacity: 0.4 !important; 
-    transition: all 0.3s ease;
-}
-
-.toggle-hamburger-btn:hover {
-    transform: scale(1.05);
-    background: #334155 !important;
-    opacity: 1 !important;
-}
-
-.main-content, .view-section, main {
-    padding-left: 20px !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.sidebar {
-    padding-top: 60px !important; 
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.sidebar.collapsed {
-    width: 0px !important;
-    padding: 0px !important;
-    overflow: hidden;
-    opacity: 0;
-}
-
-/* =============================================
-   🖼️ HOME VIEW AUTOMATIC SLIDESHOW
-   ============================================= */
-/* ============================================= */
-.slideshow-container {
-    max-width: 100%;
-    width: 550px;
-    height: 320px;
-    
-    /* 🔥 Menu එක පැත්තටම (වමට) Absolute කරලා ලොක් කරන ක්‍රමය */
-    position: absolute !important; 
-    z-index: 20;               
-    top: 298px;            
-    left: 600px !important;    /* 👈 100 වෙනුවට 40px දැම්මා, එතකොට වම් පැත්තේ Menu එක ගාවටම ලස්සනට සෙට් වෙනවා */
-    margin: 0 !important;     /* 👈 මැදට යන එක නවත්තන්න margin බිංදුව කරා */
-    
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-    border: 3px solid rgba(255, 255, 255, 0.1);
-    background: #0f172a;
-    pointer-events: auto !important; /* බටන් වැඩ කරන්න */
-}
-
-
-.mySlides {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    animation: slideAnimation 12s infinite; 
-}
-
-.mySlides img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 12px;
-}
-
-.mySlides:nth-child(1) { animation-delay: 0s; }
-.mySlides:nth-child(2) { animation-delay: 4s; }
-.mySlides:nth-child(3) { animation-delay: 8s; }
-
-@keyframes slideAnimation {
-    0% { transform: translateX(100%); opacity: 0; }
-    5% { transform: translateX(0); opacity: 1; }
-    33% { transform: translateX(0); opacity: 1; }
-    38% { transform: translateX(-100%); opacity: 0; }
-    100% { transform: translateX(-100%); opacity: 0; }
-}
-
-/* =============================================
-   🗑️ DELETED ROWS & INTERACTIONS
-   ============================================= */
-#table-body tr.selected-row {
-    background-color: #fee2e2 !important; 
-    border: 2px solid #ef4444 !important;
-}
-#table-body tr:not(.isWeeklyExcelRow):hover {
-    cursor: pointer;
-    background-color: #f1f5f9;
-}
-
-/* =============================================
-   🗂️ SPREADSHEET COLUMN FIXED WIDTHS
-   ============================================= */
-.spreadsheet-container {
-    width: 100%;
-    overflow-x: hidden !important;
-    padding: 5px;
-}
-
-table {
-    width: 100% !important;
-    min-width: 100% !important;
-    table-layout: fixed;
-    border-collapse: collapse;
-}
-
-th, td {
-    padding: 6px 4px !important;
-    font-size: 11px !important;
-    text-align: center;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-th:nth-child(1), td:nth-child(1) { width: 3%; }  
-th:nth-child(2), td:nth-child(2) { width: 8%; }  
-th:nth-child(3), td:nth-child(3) { width: 7%; }  
-th:nth-child(4), td:nth-child(4) { width: 9%; }  
-th:nth-child(5), td:nth-child(5) { width: 9%; }  
-th:nth-child(6), td:nth-child(6) { width: 8%; }  
-th:nth-child(7), td:nth-child(7) { width: 8%; }  
-th:nth-child(8), td:nth-child(8) { width: 8%; }  
-th:nth-child(9), td:nth-child(9) { width: 6%; }  
-th:nth-child(10), td:nth-child(10) { width: 12%; } 
-th:nth-child(11), td:nth-child(11) { width: 8%; }  
-th:nth-child(12), td:nth-child(12) { width: 10%; } 
-th:nth-child(13), td:nth-child(13) { width: 4%; }  
-
-/* =============================================
-   📋 DROPDOWNS & INPUTS INSIDE TABLE CELL
-   ============================================= */
-table select, 
-table input[type="text"] {
-    width: 100% !important;
-    font-size: 10px !important;
-    padding: 3px !important;
-    height: 25px !important;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
-
-
-/*  Logo */
-.sidebar {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-}
-
-.sidebar-logo-container {
-    margin-top: auto;
-    padding: 25px;
-    text-align: center;
-    position: relative;
-}
-
-.logo-link {
-    display: inline-block;
-    position: relative;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.sidebar-logo {
-    width: 130px;
-    height: 130px;
-    object-fit: contain;
-    border-radius: 50%;
-    display: block;
-    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.4));
-    animation: goldGlow 3s ease-in-out infinite alternate;
-}
-
-.logo-link::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 3px solid transparent;
-    border-top-color: rgba(255, 255, 255, 0.8);
-    border-bottom-color: rgba(255, 255, 255, 0.8);
-    animation: circularShine 3s linear infinite;
-    box-sizing: border-box;
-}
-
-.logo-link:hover {
-    transform: scale(1.08) rotate(5deg);
-}
-
-.logo-link:hover .sidebar-logo {
-    filter: drop-shadow(0 0 20px rgba(255, 195, 0, 0.9));
-}
-
-@keyframes goldGlow {
-    0% {
-        filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.4));
-    }
-    100% {
-        filter: drop-shadow(0 0 18px rgba(255, 195, 0, 0.8));
-    }
-}
-
-@keyframes circularShine {
-    0% {
-        transform: rotate(0deg);
-        filter: blur(1px);
-    }
-    100% {
-        transform: rotate(360deg);
-        filter: blur(1px);
-    }
+    reader.readAsText(file);
 }
