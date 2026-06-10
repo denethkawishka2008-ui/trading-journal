@@ -17,13 +17,11 @@ let currentMonth = 'Jan';
 let methodOptions = ['MSS', 'CISD'];
 let sessionOptions = ['London', 'New York'];
 let pairOptions = ['EUR/USD', 'GBP/USD'];
-
-// 📈 1. HOME PAGE BACKGROUND TRADING LINE ANIMATION (CANVAS)
+// 📈 1. HOME PAGE BACKGROUND REAL TRADING WAVE ANIMATION
 function initTradingAnimation() {
     const homeView = document.getElementById('home-view');
     if (!homeView) return;
 
-    // පරණ කැන්වස් එකක් තිබ්බොත් අයින් කරනවා
     const oldCanvas = document.getElementById('trading-canvas');
     if (oldCanvas) oldCanvas.remove();
 
@@ -36,7 +34,7 @@ function initTradingAnimation() {
     canvas.style.height = '100%';
     canvas.style.zIndex = '-1';
     canvas.style.pointerEvents = 'none';
-    canvas.style.opacity = '0.15'; // Background එකේ ලස්සනට පේන්න
+    canvas.style.opacity = '0.35'; // පසුබිම පැහැදිලිව පෙනීමට
     homeView.style.position = 'relative';
     homeView.insertBefore(canvas, homeView.firstChild);
 
@@ -52,22 +50,65 @@ function initTradingAnimation() {
     });
 
     let points = [];
-    let currentX = 0;
-    let currentY = height / 2;
+    let candles = [];
+    let pulseRadius = 0;
+    let pulseGrowing = true;
+    let ticks = []; 
 
-    function generatePoints() {
+    // 🌊 සැබෑ මාකට් එකක වගේ ඉහළ පල්ලෙහා යන Wave එකක් සාදා ගැනීම (Road Map)
+    function generateMarketWave() {
         points = [];
+        candles = [];
+        
         let x = 0;
-        let y = height / 2 + (Math.random() - 0.5) * 100;
-        while (x < width + 50) {
-            points.push({ x: x, y: y });
-            x += 40 + Math.random() * 40;
-            y += (Math.random() - 0.5) * 80;
-            if (y < 50) y = 50;
-            if (y > height - 50) y = height - 50;
+        let y = height / 2 + (Math.random() - 0.5) * 50;
+        
+        // ආරම්භක ලක්ෂ්‍යය
+        points.push({ x: x, y: y });
+
+        // මුළු Screen එක පුරාම රෝඩ් මැප් එකේ ලක්ෂ්‍යයන් සෑදීම
+        while (x < width + 200) {
+            // තරංග ආකාරයට උඩ සහ පල්ලෙහා යාමට සලස්වයි (Up-trends & Down-trends)
+            let waveDirection = Math.random() > 0.5 ? 1 : -1;
+            let waveHeight = 60 + Math.random() * 120;
+            let waveLength = 120 + Math.random() * 100;
+            
+            let targetX = x + waveLength;
+            let targetY = y + (waveDirection * waveHeight);
+            
+            // සීමාවන් පාලනය
+            if (targetY < 80) targetY = 80 + Math.random() * 40;
+            if (targetY > height - 80) targetY = height - 80 - Math.random() * 40;
+
+            // අතරමැදි කුඩා කැන්ඩ්ල්ස් ලක්ෂ්‍යයන් පිරවීම (Smooth Wave එකක් සඳහා)
+            let steps = Math.floor(waveLength / 25);
+            for (let i = 1; i <= steps; i++) {
+                let t = i / steps;
+                let currX = x + (targetX - x) * t;
+                let currY = y + (targetY - y) * t;
+                
+                points.push({ x: currX, y: currY });
+
+                // වීඩියෝ එකේ වගේ එක ළඟ පිහිටි ලස්සන කැන්ඩ්ල්ස් සෑදීම
+                let isBullish = (targetY < y); // යන දිශාව අනුව Green/Red තීරණය වේ
+                if (Math.random() > 0.2) { // 80% ක්ම කැන්ඩ්ල්ස් සාදයි
+                    let candleBody = 15 + Math.random() * 30;
+                    candles.push({
+                        x: currX,
+                        open: isBullish ? currY + candleBody/3 : currY - candleBody/3,
+                        close: isBullish ? currY - candleBody/3 : currY + candleBody/3,
+                        high: currY - candleBody/2 - (Math.random() * 8),
+                        low: currY + candleBody/2 + (Math.random() * 8),
+                        isBullish: isBullish
+                    });
+                }
+            }
+            
+            x = targetX;
+            y = targetY;
         }
     }
-    generatePoints();
+    generateMarketWave();
 
     let drawIndex = 0;
     let pX = points[0].x;
@@ -76,62 +117,85 @@ function initTradingAnimation() {
     function animateLine() {
         ctx.clearRect(0, 0, width, height);
         
-        // Grid Lines ඇඳීම
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.1)';
+        // Background Grid Lines
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.03)';
         ctx.lineWidth = 1;
-        for (let i = 0; i < width; i += 60) {
+        for (let i = 0; i < width; i += 80) {
             ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke();
         }
         for (let i = 0; i < height; i += 60) {
             ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke();
         }
 
-        // Trading Chart Line එක ඇඳීම
-        ctx.beginPath();
-        ctx.strokeStyle = '#22c55e'; // Green Chart Line
-        ctx.lineWidth = 3;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = '#22c55e';
-        ctx.moveTo(points[0].x, points[0].y);
+        // 🕯️ වීඩියෝ එකේ වගේ මනරම් ට්‍රේඩින් කැන්ඩ්ල්ස් එකින් එක ඇඳීම
+        candles.forEach(c => {
+            if (c.x <= pX) {
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = c.isBullish ? '#22c55e' : '#ef4444';
+                
+                // Wick (ඉර)
+                ctx.beginPath(); 
+                ctx.moveTo(c.x, c.high); 
+                ctx.lineTo(c.x, c.low); 
+                ctx.stroke();
+                
+                // Body (කොටුව)
+                ctx.fillStyle = c.isBullish ? '#22c55e' : '#ef4444';
+                ctx.fillRect(c.x - 5, Math.min(c.open, c.close), 10, Math.abs(c.open - c.close));
+            }
+        });
 
-        for (let i = 1; i <= drawIndex; i++) {
-            ctx.lineTo(points[i].x, points[i].y);
-        }
-        ctx.lineTo(pX, pY);
-        ctx.stroke();
-        ctx.shadowBlur = 0; // Reset Shadow
-
-        // Live Moving Dot එක
-        ctx.beginPath();
-        ctx.arc(pX, pY, 5, 0, Math.PI * 2);
-        ctx.fillStyle = '#ef4444'; // Red Live Dot
-        ctx.fill();
-
-        // ඊළඟ Point එකට යන ගමන ගණනය කිරීම
+        // ඊළඟ Point එක කරා ගමන් කිරීම
         let target = points[drawIndex + 1];
         if (target) {
             let dx = target.x - pX;
             let dy = target.y - pY;
             let dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 4) {
-                pX = target.x;
-                pY = target.y;
-                drawIndex++;
+            
+            if (dist < 5) {
+                pX = target.x; pY = target.y; drawIndex++;
             } else {
-                pX += (dx / dist) * 4;
-                pY += (dy / dist) * 4;
+                pX += (dx / dist) * 5; // වේගය පාලනය (Speed)
+                pY += (dy / dist) * 5;
             }
         } else {
+            // Screen එක ඉවර වුණාම නැවත මුල ඉඳන් අලුත් Wave එකක් පටන් ගනියි
             drawIndex = 0;
-            generatePoints();
-            pX = points[0].x;
-            pY = points[0].y;
+            generateMarketWave();
+            pX = points[0].x; pY = points[0].y;
         }
+
+        // ✨ ලයිව් මැජික් පුලිඟු කෑලි (Live Magic Ticks)
+        if (Math.random() > 0.4) {
+            ticks.push({
+                x: pX, y: pY,
+                vx: -(1 + Math.random() * 2), vy: (Math.random() - 0.5) * 2, alpha: 1,
+                color: Math.random() > 0.5 ? '#22c55e' : '#ef4444'
+            });
+        }
+        for (let i = ticks.length - 1; i >= 0; i--) {
+            let t = ticks[i]; t.x += t.vx; t.y += t.vy; t.alpha -= 0.04;
+            if (t.alpha <= 0) { ticks.splice(i, 1); } 
+            else {
+                ctx.beginPath(); ctx.arc(t.x, t.y, 1.5 + Math.random() * 1.5, 0, Math.PI * 2);
+                ctx.fillStyle = t.color; ctx.globalAlpha = t.alpha; ctx.fill(); ctx.globalAlpha = 1;
+            }
+        }
+
+        // 🔴 දිලිසෙන ලයිව් මැජික් ඩොට් එක (Live Pulsing Glow Dot)
+        if (pulseGrowing) { pulseRadius += 0.4; if (pulseRadius > 12) pulseGrowing = false; } 
+        else { pulseRadius -= 0.4; if (pulseRadius < 5) pulseGrowing = true; }
+
+        ctx.beginPath(); ctx.arc(pX, pY, pulseRadius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(239, 68, 68, ${0.4 - (pulseRadius / 35)})`; ctx.fill();
+
+        ctx.beginPath(); ctx.arc(pX, pY, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ef4444'; ctx.shadowBlur = 10; ctx.shadowColor = '#ef4444'; ctx.fill(); ctx.shadowBlur = 0;
+
         requestAnimationFrame(animateLine);
     }
     animateLine();
 }
-// 🔻 2. COPYRIGHT NOTE AND CSS INJECTION (RUNS ON LOAD)
 function initUIVisuals() {
     // CSS Animations ටික dynamic ලෙස Inject කිරීම
     const style = document.createElement('style');
@@ -150,19 +214,17 @@ function initUIVisuals() {
             letter-spacing: 0.5px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        /* Row Appear & Delete Shake Animations */
+ =================================================================================           
+        /*============== Row Appear & Delete Shake Animations========= */
+======================================================================================        
         @keyframes trAppear {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .animate-tr { animation: trAppear 0.35s ease-out forwards; }
-        .row-shake { animation: shakeEffect 0.4s ease-in-out; }
-        @keyframes shakeEffect {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-6px); }
-            40%, 80% { transform: translateX(6px); }
-        }
-        /* Image Modal Beautiful Zoom In Animation */
+       
+/*=========================================================
+        Image Modal Beautiful Zoom In Animation
+========================================================*/
         #image-modal {
             transition: opacity 0.3s ease;
             backdrop-filter: blur(5px);
@@ -245,21 +307,65 @@ function showSection(sectionId) {
 }
 
 function createNewTable() {
-    const tableName = prompt("Enter table name ::");
-    if (!tableName) return;
+    const oldModal = document.getElementById('custom-popup-modal');
+    if (oldModal) oldModal.remove();
 
-    const newTable = {
-        id: Date.now(),
-        name: tableName,
-        months: {
-            Jan: [], Feb: [], Mar: [], Apr: [], May: [], Jun: [],
-            Jul: [], Aug: [], Sep: [], Oct: [], Nov: [], Dec: []
-        }
+    const modal = document.createElement('div');
+    modal.id = 'custom-popup-modal';
+    modal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:999999;";
+    
+    modal.innerHTML = `
+        <div style="background:#1e1b4b; padding:24px; border-radius:12px; width:90%; max-width:380px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.5); border:1px solid #312e81; animation: popupAnim 0.2s ease-out;">
+            <h3 style="margin:0 0 16px 0; color:#ffffff; font-size:18px; font-weight:bold; font-family:sans-serif; letter-spacing:0.5px;">Create New Table</h3>
+            <input type="text" id="new-table-input-field" placeholder="Enter table name here..." style="width:100%; padding:10px 14px; margin-bottom:20px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; font-weight:bold; background:#ffffff; color:#000000; outline:none; box-sizing:border-box;">
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button id="popup-cancel-btn" style="padding:8px 16px; border:none; border-radius:6px; font-size:13px; font-weight:bold; cursor:pointer; background:#64748b; color:#ffffff; transition:opacity 0.2s;">Cancel</button>
+                <button id="popup-create-btn" style="padding:8px 16px; border:none; border-radius:6px; font-size:13px; font-weight:bold; cursor:pointer; background:#3b82f6; color:#ffffff; transition:opacity 0.2s;">Create</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const inputField = document.getElementById('new-table-input-field');
+    const createBtn = document.getElementById('popup-create-btn');
+    const cancelBtn = document.getElementById('popup-cancel-btn');
+
+    setTimeout(() => inputField.focus(), 50);
+
+    cancelBtn.onclick = function() {
+        modal.remove();
     };
-    journalTables.push(newTable);
-    saveDataToFirebase(); 
-    renderTableList();
+
+    createBtn.onclick = function() {
+        const tableName = inputField.value.trim();
+        
+        if (!tableName) {
+            alert("Please enter a valid table name!");
+            inputField.focus();
+            return;
+        }
+
+        const newTable = {
+            id: Date.now(),
+            name: tableName,
+            months: {
+                Jan: [], Feb: [], Mar: [], Apr: [], May: [], Jun: [],
+                Jul: [], Aug: [], Sep: [], Oct: [], Nov: [], Dec: []
+            }
+        };
+        
+        journalTables.push(newTable);
+        saveDataToFirebase(); 
+        renderTableList();
+        modal.remove();
+    };
+
+    modal.onclick = function(e) {
+        if (e.target === modal) modal.remove();
+    };
 }
+
 
 function renderTableList() {
     const grid = document.getElementById('table-grid');
@@ -334,13 +440,6 @@ function addNewRow() {
     renderRows(tableData.months[currentMonth]);
 }
 
-function deleteRow(rowIndex) {
-    const tableData = journalTables.find(t => t.id === currentTableId);
-    tableData.months[currentMonth].splice(rowIndex, 1);
-    saveDataToFirebase(); 
-    renderRows(tableData.months[currentMonth]);
-}
-
 function renderRows(rows) {
     const tbody = document.getElementById('table-body');
     if (!tbody) return;
@@ -369,43 +468,47 @@ function renderRows(rows) {
             return; 
         }
 
-        let pairClass = row.pair === 'EUR/USD' ? 'cell-eurusd' : (row.pair === 'GBP/USD' ? 'cell-gbpusd' : '');
-        let sideClass = row.side === 'Buy' ? 'cell-buy' : (row.side === 'Sell' ? 'cell-sell' : '');
-        let methodClass = row.method === 'MSS' ? 'cell-mss' : (row.method === 'CISD' ? 'cell-cisd' : '');
-        let resultClass = row.result === 'Profit' ? 'cell-profit' : (row.result === 'Loss' ? 'cell-loss' : (row.result === 'BE' ? 'cell-be' : ''));
-        let RRClass = row.rr === '1:2' ? 'cell-rr-12' : (row.rr === '1:3' ? 'cell-rr-13' : '');
+        // 🎨 Dropdown එකේ සිලෙක්ට් කරන අගය අනුව වටේ තියෙන Cell (TD) එකේ පසුබිම් පාට Auto තීරණය කරන හැටි
+        const getCellBgStyle = (val) => {
+            if (val === "" || val === "Select...") return ""; 
+            if (val === "Profit" || val === "Buy") return "background-color: #22c55e;"; // ලස්සන කොළ පාට
+            if (val === "Loss" || val === "Sell") return "background-color: #ef4444;"; // ලස්සන රතු පාට
+            if (val === "BE") return "background-color: #eab308;"; // කහ පාට
+            // CISD, MSS, 1:2, 1:3 සහ Sessions වලට Auto නිල්/දම් පාට වැටෙනවා
+            return "background-color: #3b82f6;"; 
+        };
+
+        // ⚪ හැම Dropdown Box එකක්ම 100%ක්ම සුදු පාටින් තියාගන්නා Style එක
+        let whiteDropdownStyle = "width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: bold; text-align: center; padding: 6px; cursor: pointer; font-size: 13px; background-color: #ffffff; color: #000000; outline: none;";
 
         tr.innerHTML = `
-            <td style="text-align: center; vertical-align: middle; padding: 8px;" class="checkbox-cell">
-                <input type="checkbox" class="row-checkbox" data-index="${index}" style="width: 18px; height: 18px; cursor: pointer;">
-            </td>
             <td contenteditable="true" onblur="updateData(${index}, 'date', this.innerText)">${row.date || ''}</td>
             <td contenteditable="false" style="background-color: #f8fafc; color: #64748b; font-weight: 600;">${row.day || ''}</td>
    
-            <td class="${pairClass}">
-                <select class="table-dropdown" onchange="updateDropdownData(${index}, 'pair', this.value, this.parentElement)">
+            <td style="${getCellBgStyle(row.pair)}">
+                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'pair', this.value, this.parentElement)">
                     <option value="" ${row.pair === '' ? 'selected' : ''}>Select...</option>
                     ${pairOptions.map(opt => `<option value="${opt}" ${row.pair === opt ? 'selected' : ''}>${opt}</option>`).join('')}
                 </select>
             </td>
             
-            <td class="${sideClass}">
-                <select class="table-dropdown" onchange="updateDropdownData(${index}, 'side', this.value, this.parentElement)">
+            <td style="${getCellBgStyle(row.side)}">
+                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'side', this.value, this.parentElement)">
                     <option value="" ${row.side === '' ? 'selected' : ''}>Select...</option>
                     <option value="Buy" ${row.side === 'Buy' ? 'selected' : ''}>Buy</option>
                     <option value="Sell" ${row.side === 'Sell' ? 'selected' : ''}>Sell</option>
                 </select>
             </td>
 
-            <td class="${methodClass}">
-                <select class="table-dropdown" onchange="updateDropdownData(${index}, 'method', this.value, this.parentElement)">
+            <td style="${getCellBgStyle(row.method)}">
+                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'method', this.value, this.parentElement)">
                     <option value="" ${row.method === '' ? 'selected' : ''}>Select...</option>   
                     ${methodOptions.map(opt => `<option value="${opt}" ${row.method === opt ? 'selected' : ''}>${opt}</option>`).join('')}
                 </select>
             </td>
 
-            <td class="${resultClass}">
-                <select class="table-dropdown" onchange="updateDropdownData(${index}, 'result', this.value, this.parentElement)">
+            <td style="${getCellBgStyle(row.result)}">
+                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'result', this.value, this.parentElement)">
                     <option value="" ${row.result === '' ? 'selected' : ''}>Select...</option>
                     <option value="Profit" ${row.result === 'Profit' ? 'selected' : ''}>Profit</option>
                     <option value="Loss" ${row.result === 'Loss' ? 'selected' : ''}>Loss</option>
@@ -413,15 +516,15 @@ function renderRows(rows) {
                 </select>
             </td>
 
-            <td>
-                <select class="table-dropdown" onchange="updateDropdownData(${index}, 'session', this.value, this.parentElement)">
+            <td style="${getCellBgStyle(row.session)}">
+                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'session', this.value, this.parentElement)">
                     <option value="" ${row.session === '' ? 'selected' : ''}>Select...</option>   
                     ${sessionOptions.map(opt => `<option value="${opt}" ${row.session === opt ? 'selected' : ''}>${opt}</option>`).join('')}
                 </select>
             </td>
             
-            <td class="${RRClass}">
-                <select class="table-dropdown" onchange="updateDropdownData(${index}, 'rr', this.value, this.parentElement)">
+            <td style="${getCellBgStyle(row.rr)}">
+                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'rr', this.value, this.parentElement)">
                     <option value="" ${row.rr === '' ? 'selected' : ''}>Select...</option>
                     <option value="1:2" ${row.rr === '1:2' ? 'selected' : ''}>1:2</option>
                     <option value="1:3" ${row.rr === '1:3' ? 'selected' : ''}>1:3</option>
@@ -443,21 +546,12 @@ function renderRows(rows) {
             </td>
         `;
 
-        const chk = tr.querySelector('.row-checkbox');
-        if(chk) {
-            chk.addEventListener('click', function(e) {
-                e.stopPropagation(); 
-                const currentStatus = this.checked;
-                document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false);
-                this.checked = currentStatus;
-            });
-        }
-
         tbody.appendChild(tr);
     });
 
     calculateStats(rows);
 }
+
 
 function updateData(rowIndex, field, value) {
     const tableData = journalTables.find(t => t.id === currentTableId);
@@ -520,7 +614,7 @@ function refreshWeeklyStats(monthRows) {
         if (monthRows[i].result === 'Loss') weeklyLoss++;
         if (monthRows[i].result === 'BE') weeklyBE++;
 
-        if (monthRows[i].day === 'Sunday') {
+        if (monthRows[i].day === 'Friday') {
             let totalWinLoss = weeklyProfit + weeklyLoss;
             let winPercentage = (totalWinLoss > 0) ? ((weeklyProfit / totalWinLoss) * 100).toFixed(0) : 0;
 
@@ -591,7 +685,21 @@ function uploadRowImage(input) {
             if (viewBtn) viewBtn.classList.remove('hidden');
             
             saveDataToFirebase(); 
-            alert("Chart Image Uploaded and Permanently Saved to Cloud! 📈💾");
+
+            const oldToast = document.getElementById('custom-toast-msg');
+            if (oldToast) oldToast.remove();
+
+            const toast = document.createElement('div');
+            toast.id = 'custom-toast-msg';
+            toast.style = "position:fixed; top:20px; right:20px; background:#10b981; color:#ffffff; padding:14px 24px; border-radius:8px; font-weight:bold; font-family:sans-serif; font-size:14px; box-shadow:0 5px 15px rgba(0,0,0,0.3); z-index:999999; animation: toastSlide 0.3s ease-out; border-left:5px solid #047857;";
+            toast.innerHTML = "📈 Chart Image Uploaded Successfully!";
+            
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = "toastFadeOut 0.3s ease-in forwards";
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
         };
         reader.readAsDataURL(file);
     }
@@ -660,7 +768,7 @@ function renderSettingsLists() {
             const li = document.createElement('li');
             li.innerHTML = `
                 <span>${opt}</span>
-                <button class="btn-remove-opt" onclick="deleteMethodOption(${index})">❌</button>
+
             `;
             methodList.appendChild(li);
         });
@@ -673,7 +781,7 @@ function renderSettingsLists() {
             const li = document.createElement('li');
             li.innerHTML = `
                 <span>${opt}</span>
-                <button class="btn-remove-opt" onclick="deleteSessionOption(${index})">❌</button>
+             
             `;
             sessionList.appendChild(li);
         });
@@ -686,7 +794,7 @@ function renderSettingsLists() {
             const li = document.createElement('li');
             li.innerHTML = `
                 <span>${opt}</span>
-                <button class="btn-remove-opt" onclick="deletePairOption(${index})">❌</button>
+              
             `;
             pairList.appendChild(li);
         });
@@ -744,11 +852,7 @@ function addPairOption() {
     renderSettingsLists();
 }
 
-function deleteMethodOption(index) {
-    methodOptions.splice(index, 1);
-    saveDataToFirebase(); 
-    renderSettingsLists();
-}
+
 
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
@@ -762,68 +866,225 @@ function toggleSidebar() {
         mainContent.classList.toggle('expanded');
     }
 }
+/*==================================================
+                  cusor animetion
+=====================================================*/
 
-function deleteSessionOption(index) {
-    sessionOptions.splice(index, 1);
-    saveDataToFirebase(); 
-    renderSettingsLists();
+
+const canvas = document.getElementById('trading-bg-canvas');
+const ctx = canvas.getContext('2d');
+const cursor = document.getElementById('custom-glow-cursor');
+
+let width = canvas.width = window.innerWidth;
+let height = canvas.height = window.innerHeight;
+
+window.addEventListener('mousemove', (e) => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+});
+
+window.addEventListener('mousedown', () => {
+    cursor.style.width = '30px';
+    cursor.style.height = '30px';
+    cursor.style.background = 'rgba(34, 197, 94, 0.5)';
+    cursor.style.borderColor = '#22c55e';
+    cursor.style.boxShadow = '0 0 20px #22c55e';
+});
+
+window.addEventListener('mouseup', () => {
+    cursor.style.width = '20px';
+    cursor.style.height = '20px';
+    cursor.style.background = 'rgba(14, 213, 168, 0.4)';
+    cursor.style.borderColor = '#0ed5a8';
+    cursor.style.boxShadow = '0 0 15px #0ed5a8, 0 0 30px rgba(14, 213, 168, 0.6)';
+});
+
+const chartsCount = 3;
+const charts = [];
+
+for (let i = 0; i < chartsCount; i++) {
+    charts.push({
+        y: height / 2 + (i - 1) * 150,
+        candles: [],
+        maxCandles: Math.floor(width / 25),
+        trend: Math.random() > 0.5 ? 1 : -1
+    });
 }
 
-function deletePairOption(index) {
-    pairOptions.splice(index, 1);
-    saveDataToFirebase(); 
-    renderSettingsLists();
+function generateInitialData() {
+    charts.forEach(chart => {
+        let currentY = chart.y;
+        for (let i = 0; i < chart.maxCandles; i++) {
+            let change = (Math.random() * 40 - 20) + (chart.trend * 5);
+            let open = currentY;
+            let close = currentY + change;
+            let high = Math.max(open, close) + Math.random() * 15;
+            let low = Math.min(open, close) - Math.random() * 15;
+            
+            chart.candles.push({ open, close, high, low, isGreen: close < open });
+            currentY = close;
+
+            if (Math.random() > 0.85) chart.trend *= -1;
+        }
+    });
 }
 
-function deleteSelectedRows() {
-    const tableData = journalTables.find(t => t.id === currentTableId);
-    if (!tableData) return;
-
-    let monthRows = tableData.months[currentMonth];
-    const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+function drawTradingCharts() {
+    ctx.clearRect(0, 0, width, height);
     
-    let indexesToDelete = [];
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < width; x += 50) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+    }
+    for (let y = 0; y < height; y += 50) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+    }
 
-    checkedBoxes.forEach(box => {
-        let idx = parseInt(box.getAttribute('data-index'));
-        if (!isNaN(idx)) {
-            indexesToDelete.push(idx);
+    charts.forEach(chart => {
+        chart.candles.forEach((candle, index) => {
+            let x = index * 25 + 10;
+            
+            ctx.strokeStyle = candle.isGreen ? 'rgba(34, 197, 94, 0.5)' : 'rgba(239, 68, 68, 0.5)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(x, candle.high);
+            ctx.lineTo(x, candle.low);
+            ctx.stroke();
+
+            ctx.fillStyle = candle.isGreen ? 'rgba(34, 197, 94, 0.7)' : 'rgba(239, 68, 68, 0.7)';
+            let bodyHeight = candle.close - candle.open;
+            ctx.fillRect(x - 6, candle.open, 12, bodyHeight || 1);
+        });
+
+        let lastCandle = chart.candles[chart.candles.length - 1];
+        let nextTrend = Math.random() > 0.8 ? chart.trend * -1 : chart.trend;
+        chart.trend = nextTrend;
+
+        let change = (Math.random() * 30 - 15) + (chart.trend * 4);
+        let open = lastCandle.close;
+        let close = open + change;
+
+        if (close < 50 || close > height - 50) {
+            chart.trend *= -1;
+            close = open + (chart.trend * 10);
+        }
+
+        let high = Math.max(open, close) + Math.random() * 10;
+        let low = Math.min(open, close) - Math.random() * 10;
+
+        chart.candles.shift();
+        chart.candles.push({ open, close, high, low, isGreen: close < open });
+    });
+}
+
+window.addEventListener('resize', () => {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+});
+
+generateInitialData();
+setInterval(drawTradingCharts, 300);
+
+
+
+
+
+
+
+
+
+
+
+
+
+document.getElementById('download-excel-btn').addEventListener('click', () => {
+    const table = document.getElementById('my-trading-table');
+    const dataMatrix = [];
+
+    const headers = [];
+    const headerCells = table.querySelectorAll('thead tr th');
+    
+    headerCells.forEach((th, index) => {
+        if (index === 0 || index === headerCells.length - 1) return;
+        headers.push(th.innerText.trim());
+    });
+    dataMatrix.push(headers);
+
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const rowData = [];
+        const cells = row.cells;
+        
+        if (cells.length < 2) return;
+
+        for (let i = 1; i < cells.length - 1; i++) {
+            const cell = cells[i];
+            
+            const select = cell.querySelector('select');
+            if (select) {
+                rowData.push(select.value && select.value !== 'Select...' ? select.value : "");
+                continue;
+            }
+
+            const input = cell.querySelector('input');
+            if (input) {
+                rowData.push(input.value ? input.value : "");
+                continue;
+            }
+
+            rowData.push(cell.innerText.trim());
+        }
+
+        if (rowData.some(val => val !== "")) {
+            dataMatrix.push(rowData);
         }
     });
 
-    if (indexesToDelete.length === 0) {
-        const table = document.querySelector('.journal-table') || document.getElementById('table-body');
-        if(table) {
-            table.classList.add('row-shake');
-            setTimeout(() => table.classList.remove('row-shake'), 400);
+    const worksheet = XLSX.utils.aoa_to_sheet(dataMatrix);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Trading Journal");
+
+    XLSX.writeFile(workbook, "Trading_Journal_Master.xlsx");
+});
+
+
+
+document.getElementById('download-pdf-btn').addEventListener('click', () => {
+    const table = document.getElementById('my-trading-table');
+
+    html2canvas(table, {
+        scale: 2, 
+        useCORS: true, 
+        backgroundColor: '#040814', 
+        logging: false
+    }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('l', 'mm', 'a4');
+        
+        const imgWidth = 280; 
+        const pageHeight = 210; 
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        let heightLeft = imgHeight;
+        let position = 10; 
+
+        pdf.setFont("Helvetica", "bold");
+        pdf.setFontSize(16);
+        pdf.setTextColor(255, 255, 255); 
+
+        pdf.addImage(imgData, 'PNG', 8, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight + 10;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 8, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
         }
-        alert("කරුණාකර මැකීමට අවශ්‍ය පේළියේ ඇති කොටුව (Checkbox) ටික් කරන්න!");
-        return;
-    }
 
-    if (confirm(`තෝරාගත් පේළිය මකා දැමීමට ඔබට විශ්වාසද?`)) {
-        indexesToDelete.sort((a, b) => b - a);
-        
-        indexesToDelete.forEach(index => {
-            if (monthRows[index]) {
-                monthRows.splice(index, 1);
-            }
-        });
-
-        refreshWeeklyStats(monthRows);
-        alert("තෝරාගත් පේළිය සාර්ථකව මකා දැමුණා! 💾");
-    }
-}
-
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('.row-checkbox') && 
-        e.target.id !== 'btn-delete-selected' && 
-        !e.target.closest('#btn-delete-selected') && 
-        e.target.tagName !== 'SELECT' && 
-        e.target.getAttribute('contenteditable') !== 'true') {
-        
-        document.querySelectorAll('.row-checkbox').forEach(cb => {
-            cb.checked = false;
-        });
-    }
+        pdf.save('Trading_Journal_Snapshot.pdf');
+    });
 });
