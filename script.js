@@ -1147,7 +1147,7 @@ function exportJSONBackup() {
         downloadAnchor.remove();
         
  
-        alert("📊 මුළු ඩේටාබේස් එකම සාර්ථකව PC එකට Backup කරගත්තා මචං!");
+        alert("📊  The database was successfully backed up to the PC.");
     } else {
         alert("මකන්න හෝ Backup කරන්න තරම් ඩේටා කිසිවක් ටේබල් එකේ නැහැ!");
     }
@@ -1179,12 +1179,12 @@ function importJSONBackup(event) {
                     loadJournalData();
                 }
                 
-                alert("✅ JSON Backup එක සාර්ථකව Import කරා මචං! දැන් ඔක්කොම ඩේටා බලාගන්න පුළුවන්.");
+                alert("✅  Database Backup successfully imported..");
             } else {
-                alert("අවුලක් තියෙනවා! මේක වැරදි ෆයිල් එකක් වගෙයි.");
+                alert("There's a problem! This seems to be the wrong file..");
             }
         } catch (err) {
-            alert("ෆයිල් එක කියවීමේදී දෝෂයක් වැටුණා: " + err.message);
+            alert("An error occurred while reading the file.: " + err.message);
         }
     };
     
@@ -1193,19 +1193,19 @@ function importJSONBackup(event) {
 
 /* table remove list  button*/
 
-// 🔄 Dropdown එකක (X) එබුවම ආපහු Select... වෙන්න හදපු අලුත්ම Function එක
+
 function resetDropdownField(index, field) {
     const tableIndex = journalTables.findIndex(t => t.id === currentTableId);
     if (tableIndex === -1) return;
     
-    // දැනට තියෙන මාසේ ඩේටා ටික ගන්නවා
+    
     let currentRows = journalTables[tableIndex].months[currentMonth] || [];
     
     if (currentRows[index]) {
-        // අදාළ ෆීල්ඩ් එක හිස් කරනවා (එතකොට ඒක Select... තත්ත්වයට පත්වෙනවා)
+     
         currentRows[index][field] = "";
         
-        // Firebase සහ UI එක අප්ඩේට් කරනවා
+     
         saveDataToFirebase();
         renderRows(currentRows);
     }

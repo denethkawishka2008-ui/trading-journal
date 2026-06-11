@@ -1768,4 +1768,10 @@ table input[type="text"] {
         transform: rotate(360deg);
         filter: blur(1px);
     }
+
+
+    /*FONT*/
+    body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Noto Color Emoji';
+}
 }
