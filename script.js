@@ -246,7 +246,7 @@ function initUIVisuals() {
     if (sidebar && !document.querySelector('.dev-copyright-note')) {
         const copyrightDiv = document.createElement('div');
         copyrightDiv.className = 'dev-copyright-note';
-        copyrightDiv.innerHTML = `© COPYRIGHT BY DENETH'S SOFTWARES<br>v1.1`;
+        copyrightDiv.innerHTML = `© COPYRIGHT BY DENETH'S SOFTWARES<br>v1.3`;
         sidebar.appendChild(copyrightDiv);
     }
     
@@ -460,7 +460,7 @@ function renderRows(rows) {
                 <td colspan="2" style="background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;">Profit: ${row.profitCount}</td>
                 <td style="background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca;">Loss: ${row.lossCount}</td>
                 <td style="background-color: #fef9c3; color: #854d0e; border: 1px solid #fef08a;">BE: ${row.beCount}</td>
-                <td colspan="3" style="color: #1e1b4b; font-size: 13px;">Weekly Winning Percentage</td>
+                <td colspan="3" style="color: #2e4b1b; font-size: 13px;">Weekly Winning Percentage</td>
                 <td colspan="2" style="background-color: #d1fae5; color: #047857; font-size: 15px; font-weight: 800; border: 1px solid #a7f3d0;">${row.winRate}%</td>
                 <td colspan="2" style="background-color: rgba(0,0,0,0.05);"></td>
             `;
@@ -468,80 +468,95 @@ function renderRows(rows) {
             return; 
         }
 
-        // 🎨 Dropdown එකේ සිලෙක්ට් කරන අගය අනුව වටේ තියෙන Cell (TD) එකේ පසුබිම් පාට Auto තීරණය කරන හැටි
-        const getCellBgStyle = (val) => {
-            if (val === "" || val === "Select...") return ""; 
-            if (val === "Profit" || val === "Buy") return "background-color: #22c55e;"; // ලස්සන කොළ පාට
-            if (val === "Loss" || val === "Sell") return "background-color: #ef4444;"; // ලස්සන රතු පාට
-            if (val === "BE") return "background-color: #eab308;"; // කහ පාට
-            // CISD, MSS, 1:2, 1:3 සහ Sessions වලට Auto නිල්/දම් පාට වැටෙනවා
-            return "background-color: #3b82f6;"; 
+      
+        const getDropdownStyle = (val) => {
+         
+            if (val === "" || val === "Select...") {
+                return "background-color: #1e293b; color: #94a3b8; border: 2px solid #3b82f6;"; 
+            }
+         
+            if (val === "Profit" || val === "Buy") {
+                return "background-color: #52f78e; color: #ffffff; border: 1px solid #16a34a;"; 
+            }
+            
+            if (val === "Loss" || val === "Sell") {
+                return "background-color: #ff4d4d; color: #ffffff; border: 1px solid #ff3d3d;"; 
+            }
+           
+            if (val === "BE") {
+                return "background-color: #ffd557; color: #ffffff; border: 1px solid #fcc95c;"; 
+            }
+            
+            return "background-color: #0284c7; color: #ffffff; border: 1px solid #0369a1;";
         };
 
-        // ⚪ හැම Dropdown Box එකක්ම 100%ක්ම සුදු පාටින් තියාගන්නා Style එක
-        let whiteDropdownStyle = "width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: bold; text-align: center; padding: 6px; cursor: pointer; font-size: 13px; background-color: #ffffff; color: #000000; outline: none;";
+
+        let baseDropdownStyle = "width: 100%; border-radius: 8px; font-weight: bold; padding: 6px; cursor: pointer; font-size: 13px; text-align: center; text-align-last: center; box-sizing: border-box; outline: none;";
+        
+    
+        let pinkCellBgStyle = "padding: 5px; text-align: center; vertical-align: middle; background-color: #ff6b6b;";
 
         tr.innerHTML = `
-            <td contenteditable="true" onblur="updateData(${index}, 'date', this.innerText)">${row.date || ''}</td>
-            <td contenteditable="false" style="background-color: #f8fafc; color: #64748b; font-weight: 600;">${row.day || ''}</td>
+                <td contenteditable="true" onblur="updateData(${index}, 'date', this.innerText)">${row.date || ''}</td>
+            <td contenteditable="false" style="background-color: #ff5555; color: #000000; font-weight: 600; text-align: center; vertical-align: middle;">${row.day || ''}</td>
    
-            <td style="${getCellBgStyle(row.pair)}">
-                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'pair', this.value, this.parentElement)">
-                    <option value="" ${row.pair === '' ? 'selected' : ''}>Select...</option>
-                    ${pairOptions.map(opt => `<option value="${opt}" ${row.pair === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+            <td style="${pinkCellBgStyle}">
+                <select style="${baseDropdownStyle} ${getDropdownStyle(row.pair)}" class="table-dropdown" onchange="updateDropdownData(${index}, 'pair', this.value, this.parentElement)">
+                    <option value="" ${row.pair === '' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Select...</option>
+                    ${pairOptions.map(opt => `<option value="${opt}" ${row.pair === opt ? 'selected' : ''} style="color: #000000; background: #ffffff;">${opt}</option>`).join('')}
                 </select>
             </td>
             
-            <td style="${getCellBgStyle(row.side)}">
-                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'side', this.value, this.parentElement)">
-                    <option value="" ${row.side === '' ? 'selected' : ''}>Select...</option>
-                    <option value="Buy" ${row.side === 'Buy' ? 'selected' : ''}>Buy</option>
-                    <option value="Sell" ${row.side === 'Sell' ? 'selected' : ''}>Sell</option>
+            <td style="${pinkCellBgStyle}">
+                <select style="${baseDropdownStyle} ${getDropdownStyle(row.side)}" class="table-dropdown" onchange="updateDropdownData(${index}, 'side', this.value, this.parentElement)">
+                    <option value="" ${row.side === '' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Select...</option>
+                    <option value="Buy" ${row.side === 'Buy' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Buy</option>
+                    <option value="Sell" ${row.side === 'Sell' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Sell</option>
                 </select>
             </td>
 
-            <td style="${getCellBgStyle(row.method)}">
-                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'method', this.value, this.parentElement)">
-                    <option value="" ${row.method === '' ? 'selected' : ''}>Select...</option>   
-                    ${methodOptions.map(opt => `<option value="${opt}" ${row.method === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+            <td style="${pinkCellBgStyle}">
+                <select style="${baseDropdownStyle} ${getDropdownStyle(row.method)}" class="table-dropdown" onchange="updateDropdownData(${index}, 'method', this.value, this.parentElement)">
+                    <option value="" ${row.method === '' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Select...</option>   
+                    ${methodOptions.map(opt => `<option value="${opt}" ${row.method === opt ? 'selected' : ''} style="color: #000000; background: #ffffff;">${opt}</option>`).join('')}
                 </select>
             </td>
 
-            <td style="${getCellBgStyle(row.result)}">
-                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'result', this.value, this.parentElement)">
-                    <option value="" ${row.result === '' ? 'selected' : ''}>Select...</option>
-                    <option value="Profit" ${row.result === 'Profit' ? 'selected' : ''}>Profit</option>
-                    <option value="Loss" ${row.result === 'Loss' ? 'selected' : ''}>Loss</option>
-                    <option value="BE" ${row.result === 'BE' ? 'selected' : ''}>BE</option>
+            <td style="${pinkCellBgStyle}">
+                <select style="${baseDropdownStyle} ${getDropdownStyle(row.result)}" class="table-dropdown" onchange="updateDropdownData(${index}, 'result', this.value, this.parentElement)">
+                    <option value="" ${row.result === '' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Select...</option>
+                    <option value="Profit" ${row.result === 'Profit' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Profit</option>
+                    <option value="Loss" ${row.result === 'Loss' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Loss</option>
+                    <option value="BE" ${row.result === 'BE' ? 'selected' : ''} style="color: #000000; background: #ffffff;">BE</option>
                 </select>
             </td>
 
-            <td style="${getCellBgStyle(row.session)}">
-                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'session', this.value, this.parentElement)">
-                    <option value="" ${row.session === '' ? 'selected' : ''}>Select...</option>   
-                    ${sessionOptions.map(opt => `<option value="${opt}" ${row.session === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+            <td style="${pinkCellBgStyle}">
+                <select style="${baseDropdownStyle} ${getDropdownStyle(row.session)}" class="table-dropdown" onchange="updateDropdownData(${index}, 'session', this.value, this.parentElement)">
+                    <option value="" ${row.session === '' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Select...</option>   
+                    ${sessionOptions.map(opt => `<option value="${opt}" ${row.session === opt ? 'selected' : ''} style="color: #000000; background: #ffffff;">${opt}</option>`).join('')}
                 </select>
             </td>
             
-            <td style="${getCellBgStyle(row.rr)}">
-                <select style="${whiteDropdownStyle}" class="table-dropdown" onchange="updateDropdownData(${index}, 'rr', this.value, this.parentElement)">
-                    <option value="" ${row.rr === '' ? 'selected' : ''}>Select...</option>
-                    <option value="1:2" ${row.rr === '1:2' ? 'selected' : ''}>1:2</option>
-                    <option value="1:3" ${row.rr === '1:3' ? 'selected' : ''}>1:3</option>
+            <td style="${pinkCellBgStyle}">
+                <select style="${baseDropdownStyle} ${getDropdownStyle(row.rr)}" class="table-dropdown" onchange="updateDropdownData(${index}, 'rr', this.value, this.parentElement)">
+                    <option value="" ${row.rr === '' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Select...</option>
+                    <option value="1:2" ${row.rr === '1:2' ? 'selected' : ''} style="color: #000000; background: #ffffff;">1:2</option>
+                    <option value="1:3" ${row.rr === '1:3' ? 'selected' : ''} style="color: #000000; background: #ffffff;">1:3</option>
                 </select>
             </td>
                
-            <td contenteditable="true" onblur="updateData(${index}, 'entryReason', this.innerText)">${row.entryReason || ''}</td>
-            <td contenteditable="true" onblur="updateData(${index}, 'targetPoint', this.innerText)">${row.targetPoint || ''}</td>
-            <td contenteditable="true" onblur="updateData(${index}, 'notes', this.innerText)">${row.notes || ''}</td>
+            <td contenteditable="true" onblur="updateData(${index}, 'entryReason', this.innerText)" style="vertical-align: middle;">${row.entryReason || ''}</td>
+            <td contenteditable="true" onblur="updateData(${index}, 'targetPoint', this.innerText)" style="vertical-align: middle;">${row.targetPoint || ''}</td>
+            <td contenteditable="true" onblur="updateData(${index}, 'notes', this.innerText)" style="vertical-align: middle;">${row.notes || ''}</td>
 
-            <td>
+            <td style="vertical-align: middle;">
                 <div style="display:flex; flex-direction:row; gap:6px; align-items:center; justify-content:center;">
                     <label class="btn-upload-label" style="background-color: #3b82f6; color: white; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; margin: 0; display: inline-flex; align-items: center;">
                         📁 Upload
                         <input type="file" accept="image/*" style="display:none;" data-true-index="${index}" onchange="uploadRowImage(this)">
                     </label>
-                    <button id="btn-view-img-${index}" class="btn-view-img ${row.image ? '' : 'hidden'}" style="background-color: #8b5cf6; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; margin: 0; display: inline-flex; align-items: center;" onclick="viewRowImage(${index})">👁️ View</button>
+                    <button id="btn-view-img-${index}" class="btn-view-img ${row.image ? '' : 'hidden'}" style="background-color: #0b0eed; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; margin: 0; display: inline-flex; align-items: center;" onclick="viewRowImage(${index})">👁️ View</button>
                 </div>
             </td>
         `;
@@ -551,7 +566,6 @@ function renderRows(rows) {
 
     calculateStats(rows);
 }
-
 
 function updateData(rowIndex, field, value) {
     const tableData = journalTables.find(t => t.id === currentTableId);
@@ -675,7 +689,7 @@ function uploadRowImage(input) {
         const formData = new FormData();
         formData.append("image", file);
 
-        // මෙතනට ඔයාගේ අලුත්ම API Key එක ලස්සනට සෙට් කරලා තියෙන්නේ මචං
+   
         fetch("https://api.imgbb.com/1/upload?key=2218858316a9a4b62dbdb33a193bc2f5", {
             method: "POST",
             body: formData
@@ -774,16 +788,21 @@ function removeContextMenu() {
     const menu = document.getElementById('custom-context-menu');
     if (menu) menu.remove();
 }
-
 function renderSettingsLists() {
     const methodList = document.getElementById('settings-method-list');
+    
+    const itemWrapperStyle = "display: inline-flex; align-items: center; gap: 8px; background-color: #ff6b6b; padding: 4px; border-radius: 8px; margin: 4px; list-style: none;";
+    const innerBoxStyle = "background-color: #0284c7; color: white; font-weight: bold; padding: 6px 12px; border-radius: 6px; font-size: 13px; display: inline-block;";
+    const closeBtnStyle = "background: rgba(0,0,0,0.3); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; padding: 0; transition: background 0.2s;";
+
     if(methodList) {
         methodList.innerHTML = '';
         methodOptions.forEach((opt, index) => {
             const li = document.createElement('li');
+            li.style.cssText = itemWrapperStyle;
             li.innerHTML = `
-                <span>${opt}</span>
-
+                <span style="${innerBoxStyle}">${opt}</span>
+                <button style="${closeBtnStyle}" onclick="removeListItem('method', '${opt}')">×</button>
             `;
             methodList.appendChild(li);
         });
@@ -794,9 +813,10 @@ function renderSettingsLists() {
         sessionList.innerHTML = '';
         sessionOptions.forEach((opt, index) => {
             const li = document.createElement('li');
+            li.style.cssText = itemWrapperStyle;
             li.innerHTML = `
-                <span>${opt}</span>
-             
+                <span style="${innerBoxStyle}">${opt}</span>
+                <button style="${closeBtnStyle}" onclick="removeListItem('session', '${opt}')">×</button>
             `;
             sessionList.appendChild(li);
         });
@@ -807,9 +827,10 @@ function renderSettingsLists() {
         pairList.innerHTML = '';
         pairOptions.forEach((opt, index) => {
             const li = document.createElement('li');
+            li.style.cssText = itemWrapperStyle;
             li.innerHTML = `
-                <span>${opt}</span>
-              
+                <span style="${innerBoxStyle}">${opt}</span>
+                <button style="${closeBtnStyle}" onclick="removeListItem('pair', '${opt}')">×</button>
             `;
             pairList.appendChild(li);
         });
@@ -1169,3 +1190,70 @@ function importJSONBackup(event) {
     
     reader.readAsText(file);
 }
+
+/* table remove list  button*/
+
+// 🔄 Dropdown එකක (X) එබුවම ආපහු Select... වෙන්න හදපු අලුත්ම Function එක
+function resetDropdownField(index, field) {
+    const tableIndex = journalTables.findIndex(t => t.id === currentTableId);
+    if (tableIndex === -1) return;
+    
+    // දැනට තියෙන මාසේ ඩේටා ටික ගන්නවා
+    let currentRows = journalTables[tableIndex].months[currentMonth] || [];
+    
+    if (currentRows[index]) {
+        // අදාළ ෆීල්ඩ් එක හිස් කරනවා (එතකොට ඒක Select... තත්ත්වයට පත්වෙනවා)
+        currentRows[index][field] = "";
+        
+        // Firebase සහ UI එක අප්ඩේට් කරනවා
+        saveDataToFirebase();
+        renderRows(currentRows);
+    }
+}
+
+/* setting button remou list */
+function removeListItem(type, value) {
+    if (type === 'pair') {
+        pairOptions = pairOptions.filter(opt => opt !== value);
+    } else if (type === 'method') {
+        methodOptions = methodOptions.filter(opt => opt !== value);
+    } else if (type === 'session') {
+        sessionOptions = sessionOptions.filter(opt => opt !== value);
+    }
+    
+
+    saveDataToFirebase();
+    renderSettingsLists();
+}
+
+
+
+
+/*======================================================
+  Deneth  Logo
+  ==================================================*/
+  // 📢 CUSTOM AD MODAL CONTROLLER
+document.addEventListener("DOMContentLoaded", () => {
+    const openAdBtn = document.getElementById("open-ad-modal");
+    const adModal = document.getElementById("ad-custom-modal");
+    const closeAdBtn = document.getElementById("close-ad-modal");
+
+    if (openAdBtn && adModal && closeAdBtn) {
+     
+        openAdBtn.addEventListener("click", () => {
+            adModal.style.display = "flex";
+        });
+
+    
+        closeAdBtn.addEventListener("click", () => {
+            adModal.style.display = "none";
+        });
+
+
+        adModal.addEventListener("click", (e) => {
+            if (e.target === adModal) {
+                adModal.style.display = "none";
+            }
+        });
+    }
+});

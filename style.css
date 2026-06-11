@@ -932,15 +932,15 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
 }
 
-.cell-buy { background-color: #bbf7d0 !important; color: #166534 !important; font-weight: 700; }
+.cell-buy { background-color: #bbf7d0 !important; color: #18fb6f !important; font-weight: 700; }
 .cell-sell { background-color: #fecaca !important; color: #991b1b !important; font-weight: 700; }
 .cell-profit { background-color: #16ef65 !important; color: #166534 !important; font-weight: 700; }
 .cell-loss { background-color: #ff7b7b !important; color: #991b1b !important; font-weight: 700; }
 .cell-be { background-color: #ffdb71 !important; color: #838504 !important; font-weight: 700; }
 .cell-london { background-color: #dbeafe !important; color: #1e40af !important; font-weight: 700; }
 .cell-newyork { background-color: #ffdfb5 !important; color: #9a3412 !important; font-weight: 700; }
-.cell-mss { background-color: #7ec9fb !important; color: #0369a1 !important; font-weight: 800; border: 1px solid #bae6fd !important; }
-.cell-cisd { background-color: #cfa1ff !important; color: #6b21a8 !important; font-weight: 800; border: 1px solid #e9d5ff !important; }
+.cell-mss { background-color: #7cffc8 !important; color: #5dff78 !important; font-weight: 800; border: 1px solid #bae6fd !important; }
+.cell-cisd { background-color: #00ff4c !important; color: #7eff9c !important; font-weight: 800; border: 1px solid #e9d5ff !important; }
 
 .cell-buy .table-dropdown, .cell-sell .table-dropdown,
 .cell-profit .table-dropdown, .cell-loss .table-dropdown, .cell-be .table-dropdown,
@@ -1624,6 +1624,130 @@ table input[type="text"] {
 
 .logo-link:hover .sidebar-logo {
     filter: drop-shadow(0 0 20px rgba(255, 195, 0, 0.9));
+}
+.ad-modal-logo {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    border-radius: 50%;
+    margin: 0 auto 15px auto;
+    display: block;
+    border: 2px solid #3b82f6;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+}
+
+.ad-modal-overlay {
+    display: none; 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(3, 7, 18, 0.85); 
+    z-index: 10000; 
+    align-items: center; 
+    justify-content: center;
+    backdrop-filter: blur(5px); 
+}
+
+.ad-modal-content {
+    background: #1e1b4b; 
+    padding: 25px 30px 30px 30px;
+    border-radius: 16px; 
+    border: 2px solid #3b82f6; 
+    width: 90%; 
+    max-width: 360px; 
+    position: relative; 
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.4); 
+    text-align: center; 
+    color: white;
+    animation: adPopupScale 0.3s ease-out; 
+}
+
+@keyframes adPopupScale {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.ad-modal-close {
+    position: absolute; 
+    top: 12px; 
+    right: 18px; 
+    font-size: 24px; 
+    color: #94a3b8; 
+    cursor: pointer; 
+    font-weight: bold;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.ad-modal-close:hover {
+    color: #ef4444; 
+    transform: scale(1.1);
+}
+
+.ad-modal-title {
+    margin-top: 0; 
+    color: #3b82f6; 
+    font-size: 20px; 
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+.ad-modal-text {
+    font-size: 14px; 
+    color: #cbd5e1; 
+    line-height: 1.6; 
+    margin-bottom: 20px;
+}
+
+.ad-modal-subtext {
+    font-weight: bold; 
+    color: #22c55e; 
+    margin-bottom: 20px; 
+    font-size: 15px;
+    letter-spacing: 1px;
+}
+
+.ad-whatsapp-btn {
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 10px; 
+    background-color: #22c55e; 
+    color: white; 
+    text-decoration: none; 
+    padding: 12px 20px; 
+    border-radius: 8px; 
+    font-weight: bold; 
+    font-size: 14px; 
+    width: 100%; 
+    box-sizing: border-box; 
+    transition: background 0.3s, transform 0.2s; 
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.ad-whatsapp-btn:hover {
+    background-color: #16a34a; 
+    transform: translateY(-2px); 
+}
+
+.ad-wp-icon {
+    font-size: 18px;
+}
+
+.custom-sidebar-logo {
+    width: 160px;       
+    height: 160px;
+    object-fit: contain;
+    border-radius: 50%;
+    display: block;
+    margin: 0 auto;
+    filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.6)); 
+    transition: transform 0.3s ease;
+}
+
+.logo-link:hover .custom-sidebar-logo {
+    transform: scale(1.05);
 }
 
 @keyframes goldGlow {
