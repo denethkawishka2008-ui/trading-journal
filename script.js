@@ -17,8 +17,9 @@ let currentMonth = 'Jan';
 let methodOptions = ['MSS', 'CISD'];
 let sessionOptions = ['London', 'New York'];
 let pairOptions = ['EUR/USD', 'GBP/USD'];
+let entryReasonOptions = ['Liquidity Sweep', 'FVG Tap', 'Order Block', 'BOS Break', 'Silver Bullet'];
 
-/* 📈 1. HOME PAGE BACKGROUND REAL TRADING WAVE ANIMATION
+/*  1. HOME PAGE BACKGROUND REAL TRADING WAVE ANIMATION
 function initTradingAnimation() {
     const homeView = document.getElementById('home-view');
     if (!homeView) return;
@@ -259,10 +260,27 @@ function saveDataToFirebase() {
         console.error("Error saving data: ", error);
     });
 }
+function loadDataFromFirebase() {
+    db.collection("trading_journal").doc("user_data").get().then((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
+            journalTables = data.journalTables || [];
+            methodOptions = data.methodOptions || ['MSS', 'CISD'];
+            sessionOptions = data.sessionOptions || ['London', 'New York'];
+            pairOptions = data.pairOptions || ['EUR/USD', 'GBP/USD'];
+            
+            entryReasonOptions = data.entryReasonOptions || ['Liquidity Sweep', 'FVG Tap', 'Order Block', 'BOS Break', 'Silver Bullet'];
+        }
+        renderTableList();
+        initUIVisuals(); 
+    }).catch((error) => {
+        console.error("Error loading data: ", error);
+    });
+}
 
 loadDataFromFirebase();
 
-// 🛠️ NOTE VIEW FIX - SHOW SECTION FUNCTION
+//  NOTE VIEW FIX - SHOW SECTION FUNCTION
 function showSection(sectionId) {
     document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
     document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
@@ -286,7 +304,7 @@ function showSection(sectionId) {
     }
 }
 
-// 🛠️ INTERNAL NOTES SUB-SECTION NAVIGATION
+// INTERNAL NOTES SUB-SECTION NAVIGATION
 function internalShowSection(subSectionId) {
     document.getElementById('sub-section-Upload').style.display = 'none';
     document.getElementById('sub-section-Note').style.display = 'none';
@@ -417,116 +435,254 @@ function addNewRow() {
     saveDataToFirebase(); 
     renderRows(tableData.months[currentMonth]);
 }
-
 function renderRows(rows) {
     const tbody = document.getElementById('table-body');
     if (!tbody) return;
     tbody.innerHTML = '';
 
+    let weeklyWins = 0;
+    let weeklyLosses = 0;
+    let weeklyBEs = 0;
+    let weeklyTotalProfit = 0;
+
     rows.forEach((row, index) => {
+       
+        if (!row.isWeeklyExcelRow) {
+            const res = row.result || '';
+            if (res === 'Profit' || res === 'WIN') weeklyWins++;
+            else if (res === 'Loss' || res === 'LOSS') weeklyLosses++;
+            else if (res === 'BE') weeklyBEs++;
+            
+            const profVal = parseFloat(row.profit) || 0;
+            weeklyTotalProfit += profVal;
+        }
+
         const tr = document.createElement('tr');
         tr.className = 'animate-tr'; 
         
+        // =========================================================================
+        //  WEEKLY SPECIAL SUMMARY ROW 
+        // =========================================================================
         if (row.isWeeklyExcelRow) {
-            tr.style.backgroundColor = "#ff00e6"; 
-            tr.style.fontWeight = "bold";
-            tr.style.textAlign = "center";
+            const totalTrades = weeklyWins + weeklyLosses;
+            const winRate = totalTrades > 0 ? Math.round((weeklyWins / totalTrades) * 100) + '%' : '0%';
+
+           
+            let specialBg = "background: linear-gradient(90deg, #2e1065 0%, #3b0764 50%, #2e1065 100%) !important; border-top: 2px solid #a855f7; border-bottom: 2px solid #a855f7; box-shadow: inset 0 0 15px rgba(168, 85, 247, 0.2);"; 
+            let winRateColor = "#38bdf8";
+
+            if (weeklyTotalProfit > 0) {
+                winRateColor = "#10b981"; 
+            } else if (weeklyTotalProfit < 0) {
+                winRateColor = "#ef4444"; 
+            }
+
+            tr.setAttribute('style', `${specialBg} font-weight: bold; height: 38px; text-align: center;`);
             
             tr.innerHTML = `
-                <td style="background-color: rgba(255, 255, 255, 0.05);"></td>
-                <td colspan="3" style="color: #1e1b4b; padding: 10px; font-size: 13px;">WEEKLY RESULT</td>
-                <td colspan="1" style="background-color: #00ff7b; color: #000000; border: 1px solid #a7f3d0;">Profit: ${row.profitCount}</td>
-                <td style="background-color: #ff0000; color: #171717; border: 1px solid #ff0000;">Loss: ${row.lossCount}</td>
-                <td style="background-color: #ffea00; color: #854d0e; border: 1px solid #fef08a;">BE: ${row.beCount}</td>
-                <td colspan="2" style="color: #ffffff; font-size: 13px;">Weekly Winning Percentage</td>
-                <td colspan="1" style="background-color: #00ff95; color: #047857; font-size: 15px; font-weight: 800; border: 1px solid #a7f3d0;">${row.winRate}%</td>
-                <td colspan="1" style="background-color: rgba(255, 238, 238, 0.05);"></td>
+                <td colspan="13" style="vertical-align: middle; text-align: center; padding: 0 15px; color: #ffffff; font-size: 13px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        
+                        <span style="font-weight: 800; color: #000000; background: #ffffff; padding: 3px 12px; border-radius: 6px; box-shadow: 0 0 8px rgba(255,255,255,0.3); font-size: 11px; letter-spacing: 0.5px;">
+                            WEEKLY SUMMARY (${row.date || '—'})
+                        </span>
+                        
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <div class="weekly-badge-win" style="padding: 3px 14px; border-radius: 6px; display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 900; cursor: pointer;">
+                                <span style="font-size: 9px;">🟢</span> WINS <span style="background: rgba(0,0,0,0.3); color: inherit; padding: 1px 6px; border-radius: 4px; font-size: 11px; margin-left: 3px;">${weeklyWins}</span>
+                            </div>
+                            
+                            <div class="weekly-badge-loss" style="padding: 3px 14px; border-radius: 6px; display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 900; cursor: pointer;">
+                                <span style="font-size: 9px;">🔴</span> LOSSES <span style="background: rgba(0,0,0,0.3); color: inherit; padding: 1px 6px; border-radius: 4px; font-size: 11px; margin-left: 3px;">${weeklyLosses}</span>
+                            </div>
+                            
+                            <div class="weekly-badge-be" style="padding: 3px 14px; border-radius: 6px; display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 900; cursor: pointer;">
+                                <span style="font-size: 9px;">🟡</span> BEs <span style="background: rgba(0,0,0,0.3); color: inherit; padding: 1px 6px; border-radius: 4px; font-size: 11px; margin-left: 3px;">${weeklyBEs}</span>
+                            </div>
+                        </div>
+
+                        <div style="background: rgba(0, 0, 0, 0.4); padding: 4px 14px; border-radius: 6px; border: 1px solid ${winRateColor}; display: flex; align-items: center; gap: 8px; box-shadow: 0 0 10px ${winRateColor}22;">
+                            <span style="color: #94a3b8; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;">WIN RATE:</span>
+                            <span style="color: ${winRateColor}; font-size: 13px; font-weight: 1000; text-shadow: 0 0 8px ${winRateColor}66;">${winRate}</span>
+                        </div>
+
+                    </div>
+                </td>
             `;
+
             tbody.appendChild(tr);
+
+         
+            weeklyWins = 0;
+            weeklyLosses = 0;
+            weeklyBEs = 0;
+            weeklyTotalProfit = 0;
             return; 
         }
 
+        // =========================================================================
+        //NORMAL TRADING ROW 
+        // =========================================================================
         const getDropdownStyle = (val) => {
-            if (val === "" || val === "Select...") return "background-color: #fcfcfc; color: #94a3b8; border: 2px solid #3b82f6;"; 
-            if (val === "Profit" || val === "Buy") return "background-color: #52f78e; color: #ffffff; border: 1px solid #16a34a;"; 
-            if (val === "Loss" || val === "Sell") return "background-color: #ff4d4d; color: #ffffff; border: 1px solid #ff3d3d;"; 
-            if (val === "BE") return "background-color: #ffd557; color: #ffffff; border: 1px solid #fcc95c;"; 
-            return "background-color: #9bdeff; color: #ffffff; border: 1px solid #7bd1ff;";
+            if (val === "" || val === "Select...") return "background-color: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1);"; 
+            if (val === "Profit" || val === "Buy") return "background-color: #63ff78; color: #ffffff; border: none;"; 
+            if (val === "Loss" || val === "Sell") return "background-color: #ff8787; color: #ffffff; border: none;"; 
+            if (val === "BE") return "background-color: #ffc96c; color: #ffffff; border: none;"; 
+            return "background-color: #84fffd; color: #ffffff; border: none;";
         };
 
-        let baseDropdownStyle = "width: 100%; border-radius: 8px; font-weight: bold; padding: 6px; cursor: pointer; font-size: 13px; text-align: center; text-align-last: center; box-sizing: border-box; outline: none;";
-        let pinkCellBgStyle = "padding: 5px; text-align: center; vertical-align: middle; background-color: #b0aeae;";
+        let baseDropdownStyle = "width: 100%; border-radius: 6px; font-weight: bold; padding: 4px; cursor: pointer; font-size: 12px; text-align: center; text-align-last: center; box-sizing: border-box; outline: none; transition: all 0.2s;";
+        let cellBgStyle = "padding: 4px; text-align: center; vertical-align: middle;";
+
+        const resVal = row.result || '';
+        if (resVal === 'Profit') {
+            tr.setAttribute('style', 'background-color: rgba(16, 185, 129, 0.12) !important;');
+        } else if (resVal === 'Loss') {
+            tr.setAttribute('style', 'background-color: rgba(239, 68, 68, 0.12) !important;');
+        } else if (resVal === 'BE') {
+            tr.setAttribute('style', 'background-color: rgba(245, 158, 11, 0.12) !important;');
+        }
 
         tr.innerHTML = `
-<td class="table-date-cell" contenteditable="true" onblur="updateData(${index}, 'date', this.innerText)"> ${row.date || ''}
+            <td style="vertical-align: middle; text-align: center;">
+                <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.03); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.08); height: 24px; box-sizing: border-box; position: relative;">
+                    <span id="date-display-${index}" style="font-size: 11px; color: #000000; font-weight: 500; white-space: nowrap;">${row.date || 'Select'}</span>
+                    <div style="position: relative; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                        <span style="font-size: 11px; pointer-events: none;">📅</span>
+                        <input type="date" value="${row.date || ''}" 
+                               style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; padding: 0; margin: 0; border: none; z-index: 5;" 
+                               onchange="document.getElementById('date-display-${index}').innerText = this.value; updateData(${index}, 'date', this.value); refreshTable();">
+                    </div>
+                </div>
+            </td>
 
-            <td contenteditable="false" style="background-color: #fbfbfb; color: #000000; font-weight: 1000; text-align: center; vertical-align: middle;">${row.day || '          '}</td>
+            <td contenteditable="false" style="background-color: rgba(255,255,255,0.05); color: #000000; font-weight: bold; text-align: center; vertical-align: middle; font-size: 12px; border-radius: 4px;">${row.day || '—'}</td>
 
-
-   
-            <td style="${pinkCellBgStyle}">
+            <td style="${cellBgStyle}">
                 <select style="${baseDropdownStyle} ${getDropdownStyle(row.pair)}" class="table-dropdown" onchange="updateDropdownData(${index}, 'pair', this.value, this.parentElement)">
-                    <option value="" ${row.pair === '' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Select...</option>
-                    ${pairOptions.map(opt => `<option value="${opt}" ${row.pair === opt ? 'selected' : ''} style="color: #000000; background: #ffffff;">${opt}</option>`).join('')}
+                    <option value="" ${row.pair === '' ? 'selected' : ''}>Select...</option>
+                    ${pairOptions.map(opt => `<option value="${opt}" ${row.pair === opt ? 'selected' : ''}>${opt}</option>`).join('')}
                 </select>
             </td>
             
-            <td style="${pinkCellBgStyle}">
+            <td style="${cellBgStyle}">
                 <select style="${baseDropdownStyle} ${getDropdownStyle(row.side)}" class="table-dropdown" onchange="updateDropdownData(${index}, 'side', this.value, this.parentElement)">
-                    <option value="" ${row.side === '' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Select...</option>
-                    <option value="Buy" ${row.side === 'Buy' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Buy</option>
-                    <option value="Sell" ${row.side === 'Sell' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Sell</option>
+                    <option value="" ${row.side === '' ? 'selected' : ''}>Select...</option>
+                    <option value="Buy" ${row.side === 'Buy' ? 'selected' : ''}>Buy</option>
+                    <option value="Sell" ${row.side === 'Sell' ? 'selected' : ''}>Sell</option>
                 </select>
             </td>
 
-            <td style="${pinkCellBgStyle}">
+            <td style="${cellBgStyle}">
                 <select style="${baseDropdownStyle} ${getDropdownStyle(row.method)}" class="table-dropdown" onchange="updateDropdownData(${index}, 'method', this.value, this.parentElement)">
-                    <option value="" ${row.method === '' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Select...</option>   
-                    ${methodOptions.map(opt => `<option value="${opt}" ${row.method === opt ? 'selected' : ''} style="color: #000000; background: #ffffff;">${opt}</option>`).join('')}
+                    <option value="" ${row.method === '' ? 'selected' : ''}>Select...</option>   
+                    ${methodOptions.map(opt => `<option value="${opt}" ${row.method === opt ? 'selected' : ''}>${opt}</option>`).join('')}
                 </select>
             </td>
 
-            <td style="${pinkCellBgStyle}">
-                <select style="${baseDropdownStyle} ${getDropdownStyle(row.result)}" class="table-dropdown" onchange="updateDropdownData(${index}, 'result', this.value, this.parentElement)">
-                    <option value="" ${row.result === '' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Select...</option>
-                    <option value="Profit" ${row.result === 'Profit' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Profit</option>
-                    <option value="Loss" ${row.result === 'Loss' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Loss</option>
-                    <option value="BE" ${row.result === 'BE' ? 'selected' : ''} style="color: #000000; background: #ffffff;">BE</option>
+            <td style="${cellBgStyle}">
+                <select style="${baseDropdownStyle} ${getDropdownStyle(row.result)}" class="table-dropdown" onchange="updateDropdownData(${index}, 'result', this.value, this.parentElement); setTimeout(refreshTable, 300);">
+                    <option value="" ${row.result === '' ? 'selected' : ''}>Select...</option>
+                    <option value="Profit" ${row.result === 'Profit' ? 'selected' : ''}>Profit</option>
+                    <option value="Loss" ${row.result === 'Loss' ? 'selected' : ''}>Loss</option>
+                    <option value="BE" ${row.result === 'BE' ? 'selected' : ''}>BE</option>
                 </select>
             </td>
 
-            <td style="${pinkCellBgStyle}">
+            <td style="${cellBgStyle}">
                 <select style="${baseDropdownStyle} ${getDropdownStyle(row.session)}" class="table-dropdown" onchange="updateDropdownData(${index}, 'session', this.value, this.parentElement)">
-                    <option value="" ${row.session === '' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Select...</option>   
-                    ${sessionOptions.map(opt => `<option value="${opt}" ${row.session === opt ? 'selected' : ''} style="color: #000000; background: #ffffff;">${opt}</option>`).join('')}
+                    <option value="" ${row.session === '' ? 'selected' : ''}>Select...</option>   
+                    ${sessionOptions.map(opt => `<option value="${opt}" ${row.session === opt ? 'selected' : ''}>${opt}</option>`).join('')}
                 </select>
             </td>
             
-            <td style="${pinkCellBgStyle}">
+            <td style="${cellBgStyle}">
                 <select style="${baseDropdownStyle} ${getDropdownStyle(row.rr)}" class="table-dropdown" onchange="updateDropdownData(${index}, 'rr', this.value, this.parentElement)">
-                    <option value="" ${row.rr === '' ? 'selected' : ''} style="color: #000000; background: #ffffff;">Select...</option>
-                    <option value="1:2" ${row.rr === '1:2' ? 'selected' : ''} style="color: #000000; background: #ffffff;">1:2</option>
-                    <option value="1:3" ${row.rr === '1:3' ? 'selected' : ''} style="color: #000000; background: #ffffff;">1:3</option>
+                    <option value="" ${row.rr === '' ? 'selected' : ''}>Select...</option>
+                    <option value="1:2" ${row.rr === '1:2' ? 'selected' : ''}>1:2</option>
+                    <option value="1:3" ${row.rr === '1:3' ? 'selected' : ''}>1:3</option>
                 </select>
-            </td>
-               
-            <td contenteditable="true" onblur="updateData(${index}, 'entryReason', this.innerText)" style="vertical-align: middle;">${row.entryReason || ''}</td>
-            <td contenteditable="true" onblur="updateData(${index}, 'notes', this.innerText)" style="vertical-align: middle;">${row.notes || ''}</td>
+            </td> 
 
+  <td style="padding: 4px; text-align: left; vertical-align: middle; white-space: nowrap; width: auto;">
+    <div style="display: flex; flex-direction: row; gap: 4px; align-items: center; width: max-content;">
+        
+        <select class="auto-width-select" onchange="updateDropdownData(${index}, 'entryReason1', this.value, this.parentElement); setTimeout(refreshTable, 300);">
+            <option value="LVG" ${(row.entryReason1 || '') === 'LVG' || (row.entryReason1 || '') === '' ? 'selected' : ''}>LVG</option>
+            <option value="15min  FVG" ${(row.entryReason1 || '') === '15min  FVG' ? 'selected' : ''}>15min  FVG</option>
+            <option value="5min" ${(row.entryReason1 || '') === '5min' ? 'selected' : ''}>5min</option>
+        </select>
+
+        <select class="auto-width-select" onchange="updateDropdownData(${index}, 'entryReason2', this.value, this.parentElement); setTimeout(refreshTable, 300);">
+            <option value="Liq Sweep" ${(row.entryReason2 || '') === 'Liq Sweep' || (row.entryReason2 || '') === '' ? 'selected' : ''}>Liq Sweep</option>
+            <option value="15min liq sweep" ${(row.entryReason2 || '') === '15min liq sweep' ? 'selected' : ''}>15min liq sweep</option>
+            <option value="1 min Liq Sweep" ${(row.entryReason2 || '') === '1 min Liq Sweep' ? 'selected' : ''}>1 min Liq Sweep</option>
+        </select>
+
+        <span style="color: rgba(255,255,255,0.2); font-size: 12px; font-weight: bold;">,</span>
+
+        <select class="auto-width-select" onchange="updateDropdownData(${index}, 'entryReason3', this.value, this.parentElement); setTimeout(refreshTable, 300);">
+            <option value="MSS" ${(row.entryReason3 || '') === 'MSS' || (row.entryReason3 || '') === '' ? 'selected' : ''}>MSS</option>
+            <option value="1min mss" ${(row.entryReason3 || '') === '1min mss' ? 'selected' : ''}>1min mss</option>
+            <option value="3min mss" ${(row.entryReason3 || '') === '3min mss' ? 'selected' : ''}>3min mss</option>
+            <option value="15min mss" ${(row.entryReason3 || '') === '15min mss' ? 'selected' : ''}>15min mss</option>
+        </select>
+
+        <select class="auto-width-select" onchange="updateDropdownData(${index}, 'entryReason4', this.value, this.parentElement); setTimeout(refreshTable, 300);">
+            <option value="CFSD" ${(row.entryReason4 || '') === 'CFSD' || (row.entryReason4 || '') === '' ? 'selected' : ''}>CFSD</option>
+            <option value="min CISD" ${(row.entryReason4 || '') === 'min CISD' ? 'selected' : ''}>min CISD</option>
+            <option value="3min CISD" ${(row.entryReason4 || '') === '3min CISD' ? 'selected' : ''}>3min CISD</option>
+        </select>
+
+        <span style="color: rgba(255,255,255,0.2); font-size: 12px; font-weight: bold;">,</span>
+
+        <select class="auto-width-select" onchange="updateDropdownData(${index}, 'entryReason5', this.value, this.parentElement); setTimeout(refreshTable, 300);">
+            <option value="HRL" ${(row.entryReason5 || '') === 'HRL' || (row.entryReason5 || '') === '' ? 'selected' : ''}>HRL</option>
+            <option value="1 min HRl" ${(row.entryReason5 || '') === '1 min HRl' ? 'selected' : ''}>1 min HRl</option>
+            <option value="3 min HRL" ${(row.entryReason5 || '') === '3 min HRL' ? 'selected' : ''}>3 min HRl</option>
+            <option value="15 min HRL" ${(row.entryReason5 || '') === '15 min HRL' ? 'selected' : ''}> 15 min HRl</option>
+        </select>
+
+    </div>
+</td>
+            <td contenteditable="true" onblur="updateData(${index}, 'notes', this.innerText)" style="vertical-align: middle; font-weight: bold; color: #ef4444;">${row.notes || ''}</td>
+
+           
             <td style="vertical-align: middle;">
-                <div style="display:flex; flex-direction:row; gap:6px; align-items:center; justify-content:center;">
-                    <label class="btn-upload-label" style="background-color: #3b82f6; color: white; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; margin: 0; display: inline-flex; align-items: center;">
-                        📁 Upload
-                        <input type="file" accept="image/*" style="display:none;" data-true-index="${index}" onchange="uploadRowImage(this)">
+                <div style="display:flex; flex-direction:row; gap:4px; align-items:center; justify-content:center;">
+                    <label class="btn-upload-label" style="background-color: #3b82f6; color: white; padding: 4px 6px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: bold; margin: 0; display: inline-flex; align-items: center;" title="Upload Left Image">
+                        📁 L
+                        <input type="file" accept="image/*" style="display:none;" data-true-index="${index}" data-img-num="1" onchange="uploadRowImage(this)">
                     </label>
-                    <button id="btn-view-img-${index}" class="btn-view-img ${row.image ? '' : 'hidden'}" style="background-color: #0b0eed; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; margin: 0; display: inline-flex; align-items: center;" onclick="viewRowImage(${index})">👁️ View</button>
+                    <label class="btn-upload-label" style="background-color: #10b981; color: white; padding: 4px 6px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: bold; margin: 0; display: inline-flex; align-items: center;" title="Upload Right Image">
+                        📁 R
+                        <input type="file" accept="image/*" style="display:none;" data-true-index="${index}" data-img-num="2" onchange="uploadRowImage(this)">
+                    </label>
+                    <button id="btn-view-img-${index}" class="btn-view-img ${(row.image1 || row.image2 || row.image) ? '' : 'hidden'}" style="background-color: #0b0eed; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: bold; margin: 0; display: inline-flex; align-items: center;" onclick="viewRowImage(${index})">👁️ View</button>
                 </div>
             </td>
         `;
         tbody.appendChild(tr);
     });
     calculateStats(rows);
+
+
+
 }
+
+// Dropdown change wena welawe cell eke background eka wenas karana function ekata meka danna:
+function updateEntryReasonColor(cell, value) {
+    // Kalin thibuna cell classes ain karanna
+    cell.classList.remove('cell-liquidity-sweep', 'cell-fvg-tap', 'cell-order-block', 'cell-bos-break', 'cell-silver-bullet');
+    
+    // Aluth value ekata adala class eka danna
+    if (value === 'Liquidity Sweep') cell.classList.add('cell-liquidity-sweep');
+    else if (value === 'FVG Tap') cell.classList.add('cell-fvg-tap');
+    else if (value === 'Order Block') cell.classList.add('cell-order-block');
+    else if (value === 'BOS Break') cell.classList.add('cell-bos-break');
+    else if (value === 'Silver Bullet') cell.classList.add('cell-silver-bullet');
+}
+
 
 function updateData(rowIndex, field, value) {
     const tableData = journalTables.find(t => t.id === currentTableId);
@@ -618,10 +774,11 @@ function calculateStats(rows) {
     if (beEl) beEl.innerText = beCount;
     if (monthlyWinRateEl) { monthlyWinRateEl.innerText = monthlyWinRate + "%"; }
 }
-
 function uploadRowImage(input) {
     const index = parseInt(input.getAttribute('data-true-index'));
+    const imgNum = input.getAttribute('data-img-num'); 
     const file = input.files[0];
+    
     if (file) {
         const formData = new FormData();
         formData.append("image", file);
@@ -637,7 +794,11 @@ function uploadRowImage(input) {
                 const tableData = journalTables.find(t => t.id === currentTableId);
                 
                 if (tableData && tableData.months[currentMonth][index]) {
-                    tableData.months[currentMonth][index].image = downloadURL;
+                    if (imgNum === "1") {
+                        tableData.months[currentMonth][index].image1 = downloadURL;
+                    } else if (imgNum === "2") {
+                        tableData.months[currentMonth][index].image2 = downloadURL;
+                    }
                 }
                 
                 const viewBtn = document.getElementById(`btn-view-img-${index}`);
@@ -651,7 +812,7 @@ function uploadRowImage(input) {
                 const toast = document.createElement('div');
                 toast.id = 'custom-toast-msg';
                 toast.style = "position:fixed; top:20px; right:20px; background:#10b981; color:#ffffff; padding:14px 24px; border-radius:8px; font-weight:bold; font-family:sans-serif; font-size:14px; box-shadow:0 5px 15px rgba(0,0,0,0.3); z-index:999999; animation: toastSlide 0.3s ease-out; border-left:5px solid #047857;";
-                toast.innerHTML = "📈 Chart Image Saved Successfully!";
+                toast.innerHTML = `📈 Chart Image ${imgNum} Saved Successfully!`;
                 document.body.appendChild(toast);
 
                 setTimeout(() => {
@@ -663,51 +824,103 @@ function uploadRowImage(input) {
         .catch(error => { alert("Error uploading image: " + error.message); });
     }
 }
-
 function viewRowImage(index) {
     const tableData = journalTables.find(t => t.id === currentTableId);
-    if (!tableData) return;
+    if (!tableData || !tableData.months[currentMonth][index]) return;
+    
     const rowData = tableData.months[currentMonth][index];
-    if (rowData && rowData.image) {
-        const modal = document.getElementById('image-modal');
-        const modalImg = document.getElementById('modal-preview-img');
-        modalImg.src = rowData.image;
-        
-        modal.classList.remove('hidden');
-        setTimeout(() => { modal.classList.add('show-modal'); }, 10);
-    }
+    const imgUrl1 = rowData.image1 || rowData.image || ''; 
+    const imgUrl2 = rowData.image2 || '';
+    
+    const modal = document.getElementById('image-modal');
+    if (!modal) return;
+    
+  
+    modal.innerHTML = `
+        <div style="background: #1e1b4b; padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); width: 95%; max-width: 1000px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; margin: auto;">
+            <span style="position: absolute; top: 10px; right: 15px; font-size: 28px; color: #94a3b8; cursor: pointer; font-weight: bold;" onclick="closeImageModal()">&times;</span>
+            <h3 style="color: white; margin-top: 0; font-size: 16px; margin-bottom: 15px;"> images</h3>
+            
+            <div style="display: flex; gap: 15px; justify-content: center; align-items: flex-start; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                    <p style="color: #3bf641; font-size: 12px; font-weight: bold; margin: 0 0 5px 0;">IMAGE 1 (LEFT)</p>
+                    ${imgUrl1 ? `<img src="${imgUrl1}" style="max-width: 100%; max-height: 60vh; border-radius: 4px; object-fit: contain; cursor: zoom-in;" onclick="openFullFullscreen(this.src)">` : `<p style="color: #64748b; font-size: 12px; padding: 20px 0;">No Left Image</p>`}
+                </div>
+                <div style="flex: 1; min-width: 250px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                    <p style="color: #10b981; font-size: 12px; font-weight: bold; margin: 0 0 5px 0;">IMAGE 2 (RIGHT)</p>
+                    ${imgUrl2 ? `<img src="${imgUrl2}" style="max-width: 100%; max-height: 60vh; border-radius: 4px; object-fit: contain; cursor: zoom-in;" onclick="openFullFullscreen(this.src)">` : `<p style="color: #64748b; font-size: 12px; padding: 20px 0;">No Right Image</p>`}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+    setTimeout(() => { modal.classList.add('show-modal'); }, 10);
 }
 
 function closeImageModal() {
     const modal = document.getElementById('image-modal');
-    if (!modal) return;
-    modal.classList.remove('show-modal');
-    setTimeout(() => { modal.classList.add('hidden'); }, 300);
+    if (modal) {
+        modal.classList.remove('show-modal');
+        setTimeout(() => { modal.classList.add('hidden'); }, 300);
+    }
 }
 
-function showContextMenu(event, tableId) {
-    event.preventDefault(); 
-    removeContextMenu();
+// Image full screen
+function openFullFullscreen(imgUrl) {
+    const oldFS = document.getElementById('global-fullscreen-view');
+    if (oldFS) oldFS.remove();
 
-    const contextMenu = document.createElement('div');
-    contextMenu.id = 'custom-context-menu';
-    contextMenu.innerText = '🗑️ Delete Table';
-    contextMenu.style.top = `${event.pageY}px`;
-    contextMenu.style.left = `${event.pageX}px`;
+    const fsDiv = document.createElement('div');
+    fsDiv.id = 'global-fullscreen-view';
+    
+    
+    fsDiv.setAttribute('style', 'position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(0, 0, 0, 0.95) !important; z-index: 9999999 !important; display: flex !important; align-items: center !important; justify-content: center !important; overflow: hidden !important;');
 
-    contextMenu.onclick = (e) => {
-        e.stopPropagation();
-        if (confirm("Are you sure you want to completely delete this table?")) {
-            journalTables = journalTables.filter(t => t.id !== tableId);
-            saveDataToFirebase(); 
-            renderTableList();
+    fsDiv.innerHTML = `
+        <span style="position: absolute; top: 20px; right: 30px; font-size: 45px; color: #ffffff; font-weight: bold; cursor: pointer; z-index: 10000000;" onclick="closeFullFullscreen()">&times;</span>
+        <img id=\"fs-target-img\" src="${imgUrl}" style="max-width: 95vw !important; max-height: 95vh !important; object-fit: contain !important; border-radius: 4px; box-shadow: 0 0 35px rgba(0,0,0,0.9); transition: transform 0.1s ease-out; transform-origin: center; cursor: grab;">
+    `;
+
+    document.body.appendChild(fsDiv);
+
+    // ---  MOUSE WHEEL ZOOM SYSTEM ---
+    const img = document.getElementById('fs-target-img');
+    let scale = 1; 
+
+    fsDiv.addEventListener('wheel', function(e) {
+        e.preventDefault(); 
+
+      
+        if (e.deltaY < 0) {
+            scale += 0.1; 
+        } else {
+            scale -= 0.1; 
         }
-        removeContextMenu();
-    };
 
-    document.body.appendChild(contextMenu);
-    document.body.onclick = removeContextMenu;
+      
+        scale = Math.max(0.8, Math.min(5, scale));
+
+        
+        img.style.transform = `scale(${scale})`;
+    }, { passive: false });
+
+   
+    fsDiv.onclick = function(e) {
+        if (e.target === fsDiv) {
+            closeFullFullscreen();
+        }
+    };
 }
+
+
+function closeFullFullscreen() {
+    const fsDiv = document.getElementById('global-fullscreen-view');
+    if (fsDiv) {
+        fsDiv.remove();
+    }
+}
+
 
 function removeContextMenu() {
     const menu = document.getElementById('custom-context-menu');
@@ -781,7 +994,7 @@ function toggleSidebar() {
     if (mainContent) mainContent.classList.toggle('expanded');
 }
 
-// 🌐 2. BACKGROUND CANVAS GRAPHICS & CURSOR ANIMATION
+//  2. BACKGROUND CANVAS GRAPHICS & CURSOR ANIMATION
 const canvasBg = document.getElementById('trading-bg-canvas');
 const ctxBg = canvasBg.getContext('2d');
 const cursor = document.getElementById('custom-glow-cursor');
@@ -934,13 +1147,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 /* ==========================================================================
-   🔑 GOOGLE DRIVE INTEGRATION CONFIGURATION
+    GOOGLE DRIVE INTEGRATION CONFIGURATION
    ========================================================================== */
 const API_KEY = 'AIzaSyD0ea4fJK0Q2FMTEqMMzVzlzj-TJSFunKY';
 const CLIENT_ID = '1067236645973-vqh432e01qnr8vtsmi3gtaeg3b581ong.apps.googleusercontent.com';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 
-// ⚠️ FIXED: Scopes with ReadOnly and File access
+// FIXED: Scopes with ReadOnly and File access
 const SCOPES = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file';
 
 let tokenClient;
@@ -948,7 +1161,7 @@ let gapiInited = false;
 let gisInited = false;
 
 /* ==========================================================================
-   🔄 WINDOW ONLOAD & INITIALIZATION
+    WINDOW ONLOAD & INITIALIZATION
    ========================================================================== */
 window.onload = function() {
 
@@ -997,7 +1210,7 @@ function setupSidebarNavigation() {
             e.preventDefault();
             const notesSection = document.getElementById('your-notes-section');
             if (notesSection) {
-                notesSection.style.display = 'block'; // Notes පේජ් එක පෙන්වනවා
+                notesSection.style.display = 'block'; 
             }
         });
     }
@@ -1013,7 +1226,7 @@ function setupSidebarNavigation() {
 }
 
 /* ==========================================================================
-   🎛️ TABS SWITCHING LOGIC (UPLOAD / SAVED NOTES)
+    TABS SWITCHING LOGIC (UPLOAD / SAVED NOTES)
    ========================================================================== */
 function setupTabSwitching() {
     const tabUploadBtn = document.getElementById('tab-upload-btn');
@@ -1037,14 +1250,14 @@ function setupTabSwitching() {
             tabSavedBtn.classList.add('active');
             tabUploadBtn.classList.remove('active');
             
-            // 📡 ටැබ් එක ඔබපු ගමන් ෆයිල් ටික රීඩ් කරනවා
+          
             fetchGoogleDriveFiles();
         };
     }
 }
 
 /* ==========================================================================
-   鼠标 BROWSE BUTTON & DRAG/DROP EVENTS (FIXED FOR INDEX.HTML)
+    BROWSE BUTTON & DRAG/DROP EVENTS (FIXED FOR INDEX.HTML)
    ========================================================================== */
 function setupUploadButtonHandlers() {
     // Browse button click handler
@@ -1100,7 +1313,7 @@ function setupUploadButtonHandlers() {
 }
 
 /* ==========================================================================
-   📥 FILE UPLOAD WITH REAL PROGRESS BAR
+   FILE UPLOAD WITH REAL PROGRESS BAR
    ========================================================================== */
 async function handleMultipleFiles(files) {
     const validFiles = [];
@@ -1193,11 +1406,9 @@ function uploadFileWithProgress(file) {
     });
 }
 
+
 /* ==========================================================================
-   📡 FETCH GOOGLE DRIVE FILES (SAVED NOTES SHOWING LOGIC)
-   ========================================================================== */
-/* ==========================================================================
-   📡 FETCH GOOGLE DRIVE FILES (CHROME OPEN FIX)
+ FETCH GOOGLE DRIVE FILES (CHROME OPEN FIX)
    ========================================================================== */
 async function fetchGoogleDriveFiles() {
     const filesListContainer = document.getElementById('saved-files-list');
@@ -1220,7 +1431,7 @@ async function fetchGoogleDriveFiles() {
     try {
         const response = await gapi.client.drive.files.list({
             q: "mimeType='application/pdf' and trashed=false",
-            fields: 'files(id, name, webViewLink, webContentLink)', // මෙතනින් ලින්ක් වර්ග දෙකම ඉල්ලනවා
+            fields: 'files(id, name, webViewLink, webContentLink)', 
             pageSize: 30,
             orderBy: 'createdTime desc'
         });
@@ -1260,7 +1471,7 @@ async function fetchGoogleDriveFiles() {
     }
 }
 // =================================
-// 🚀 Master Auto Overwrite Backup Section (12 PM Only)
+//  Master Auto Overwrite Backup Section (12 PM Only)
 // =================================
 
 function updateBackupStatusDisplay() {
@@ -1355,7 +1566,7 @@ function showSuccessToast() {
 
 window.addEventListener("DOMContentLoaded", () => {
     checkAndTriggerAutoBackup();
-    setInterval(checkAndTriggerAutoBackup, 1000 * 60); // Check every 1 minute
+    setInterval(checkAndTriggerAutoBackup, 1000 * 60); 
 });
 
 
@@ -1373,8 +1584,8 @@ function triggerJsonDownload() {
         downloadAnchor.setAttribute("href", dataStr);
         
         const now = new Date();
-        const dateString = now.toISOString().split('T')[0]; // e.g., 2026-03-30
-        const timeString = now.getHours() + "-" + now.getMinutes(); // e.g., 12-0
+        const dateString = now.toISOString().split('T')[0]; 
+        const timeString = now.getHours() + "-" + now.getMinutes(); 
         
       
         downloadAnchor.setAttribute("download", `Trading_Journal_Backup_${dateString}_${timeString}.json`);
@@ -1396,20 +1607,43 @@ function triggerJsonDownload() {
 // =================================
 // Row locking section
 // =================================
-const IS_SOFTWARE_ENGINEER = false; 
+
+const IS_SOFTWARE_ENGINEER = true; 
+
+
+function showLockedAlertMessage() {
+   
+    const oldToast = document.querySelector('.locked-toast-alert');
+    if (oldToast) oldToast.remove();
+
+    const toast = document.createElement('div');
+    toast.className = 'locked-toast-alert';
+    toast.innerHTML = `⚠️ <span>This row is locked because the day has passed!</span>`;
+    document.body.appendChild(toast);
+
+   
+    setTimeout(() => {
+        toast.style.transition = "opacity 0.5s ease";
+        toast.style.opacity = "0";
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
+}
 
 function applyRowLockingSystem() {
     if (IS_SOFTWARE_ENGINEER) return; 
-
 
     const now = new Date();
     const offset = now.getTimezoneOffset();
     const localDate = new Date(now.getTime() - (offset * 60 * 1000));
     const todayDateStr = localDate.toISOString().split('T')[0];
 
-    const journalRows = document.querySelectorAll("#journal-table-body tr, tr.journal-row"); 
+   
+    const journalRows = document.querySelectorAll("#table-body tr, #journal-table-body tr, tr.journal-row"); 
 
     journalRows.forEach(row => {
+       
+        if (row.innerText.includes("WEEKLY SUMMARY")) return;
+
         let rowDateStr = row.getAttribute("data-date"); 
 
         if (!rowDateStr) {
@@ -1433,8 +1667,15 @@ function applyRowLockingSystem() {
            
             row.querySelectorAll("input, select, textarea").forEach(input => {
                 input.disabled = true;
-                input.style.opacity = "0.6";
+                input.style.opacity = "0.5";
                 input.style.cursor = "not-allowed";
+            });
+
+           
+            row.querySelectorAll('[contenteditable="true"]').forEach(cell => {
+                cell.setAttribute('contenteditable', 'false');
+                cell.style.opacity = "0.6";
+                cell.style.cursor = "not-allowed";
             });
 
           
@@ -1443,14 +1684,24 @@ function applyRowLockingSystem() {
                 btn.style.opacity = "0.3";
             });
 
-      
-            row.querySelectorAll(".btn-view-image, .image-preview-btn, [id*='view'], [class*='view']").forEach(imgBtn => {
+           
+            row.querySelectorAll(".btn-view-img, .btn-view-image, .image-preview-btn, [id*='view'], [class*='view']").forEach(imgBtn => {
                 imgBtn.style.pointerEvents = "auto";
                 imgBtn.style.opacity = "1";
                 imgBtn.style.cursor = "pointer";
             });
 
-            row.classList.add("locked-historical-row");
+           
+            if (!row.classList.contains("locked-historical-row")) {
+                row.classList.add("locked-historical-row");
+                
+                
+                row.addEventListener('click', (e) => {
+                    if (!e.target.closest('button') && !e.target.closest('.btn-view-img') && !e.target.closest('label')) {
+                        showLockedAlertMessage();
+                    }
+                });
+            }
         }
     });
 }
@@ -1460,6 +1711,9 @@ window.addEventListener("DOMContentLoaded", () => {
     setTimeout(applyRowLockingSystem, 1500); 
     setInterval(applyRowLockingSystem, 2000); 
 });
+// =========================================================================
+// END OF LOCKING SYSTEM
+// =========================================================================
 // =================================
 // End of Row locking section
 // =================================
