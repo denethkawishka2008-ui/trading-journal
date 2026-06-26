@@ -101,7 +101,7 @@ body::after {
 }
 
 /* =============================================
-   📈 TRADING CANVAS BACKGROUND
+   TRADING CANVAS BACKGROUND
    ============================================= */
 #trading-canvas {
     opacity: 0.6 !important;
@@ -110,7 +110,7 @@ body::after {
 }
 
 /* =============================================
-   📁 SIDEBAR LAYOUT & STYLES
+    SIDEBAR LAYOUT & STYLES
    ============================================= */
 .sidebar {
     width: 260px;
@@ -138,7 +138,7 @@ body::after {
 }
 
 /* =============================================
-   🔗 NAVIGATION LINKS
+    NAVIGATION LINKS
    ============================================= */
 nav a {
     display: flex;
@@ -158,7 +158,7 @@ nav a:hover, nav a.active {
 }
 
 /* =============================================
-   🏷️ SIDEBAR WATERMARK
+    SIDEBAR WATERMARK
    ============================================= */
 .sidebar-watermark {
     font-size: 11px;
@@ -172,7 +172,7 @@ nav a:hover, nav a.active {
 }
 
 /* =============================================
-   💻 MAIN CONTENT WATERMARK
+    MAIN CONTENT WATERMARK
    ============================================= */
 .main-content::before {
     content: "Deneth's software";
@@ -191,7 +191,7 @@ nav a:hover, nav a.active {
 }
 
 /* =============================================
-   📊 DASHBOARD TABLES GRID LAYOUT
+    DASHBOARD TABLES GRID LAYOUT
    ============================================= */
 #table-grid {
     display: flex !important;
@@ -204,8 +204,80 @@ nav a:hover, nav a.active {
     margin-left: 0 !important; 
 }
 
+
+/*table  style */
+body, html {
+    height: auto !important; 
+    overflow-y: auto !important; 
+}
+
+
+.app-container, .main-content, .dashboard-container {
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow: visible !important;
+}
+
+
+.spreadsheet-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important; 
+    padding: 10px !important;
+    margin-top: 15px !important;
+    box-sizing: border-box !important;
+}
+
+
+.table-responsive {
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;   
+    overflow-x: auto !important;     
+    overflow-y: visible !important;  
+    display: block !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+}
+
+
+#journal-table {
+    width: 100% !important;
+    min-width: 1400px !important;
+    border-collapse: collapse !important;
+    table-layout: auto !important;
+}
+
+
+#journal-table th, 
+#journal-table td {
+    white-space: nowrap !important; 
+}
+
+
+.table-responsive::-webkit-scrollbar {
+    height: 10px !important;
+    display: block !important;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #020617 !important; 
+    border-radius: 5px !important;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #1e40af !important; 
+    border-radius: 5px !important;
+    border: 2px solid #020617 !important;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #3b82f6 !important;
+}
 /* =============================================
-   🏠 HOME VIEW HEADER BLOCK
+   HOME VIEW HEADER BLOCK
    ============================================= */
 /* --- PREMIUM TITLE CONTAINER --- */
 .trading-journal-title-box {
@@ -222,7 +294,7 @@ nav a:hover, nav a.active {
 
 }
 
-/* --- 🚀 MAIN TITLE WITH BREATHING GLOW EFFECT --- */
+/* ---  MAIN TITLE WITH BREATHING GLOW EFFECT --- */
 .main-journal-title {
     font-size: 34px;
     font-weight: 800;
@@ -241,7 +313,7 @@ nav a:hover, nav a.active {
     animation: titleBreathing 3s ease-in-out infinite alternate;
 }
 
-/* --- 💚 TRADING JOURNAL HIGHLIGHT (GREEN GRADIENT) --- */
+/* ---  TRADING JOURNAL HIGHLIGHT (GREEN GRADIENT) --- */
 .main-journal-title .highlight-text {
     background: linear-gradient(135deg, #22c55e, #4ade80);
     -webkit-background-clip: text;
@@ -252,7 +324,7 @@ nav a:hover, nav a.active {
     filter: drop-shadow(0 0 10px rgba(34, 197, 94, 0.5));
 }
 
-/* --- 📈 SUB TITLE --- */
+/* ---  SUB TITLE --- */
 .sub-journal-title {
     font-size: 14px;
     font-weight: 500;
@@ -277,7 +349,7 @@ nav a:hover, nav a.active {
     }
 }
 
-/* --- 📦 HEADER ROW CONTAINER (MAIN LAYOUT) --- */
+/* ---  HEADER ROW CONTAINER (MAIN LAYOUT) --- */
 .header-row {
     display: flex;
     justify-content: center;  
@@ -314,7 +386,7 @@ All table titles will use this style for a consistent premium look across the da
 
 
 /* =============================================
-   👋 Waving Emoji Animation
+    Waving Emoji Animation
    ============================================= */
 .wave-emoji {
     display: inline-block;
@@ -334,7 +406,7 @@ All table titles will use this style for a consistent premium look across the da
 }
 
 /* =============================================
-   🗂️ TABLE GRID ALIGNMENT
+   TABLE GRID ALIGNMENT
    ============================================= */
 #table-grid {
     display: flex !important;
@@ -347,7 +419,7 @@ All table titles will use this style for a consistent premium look across the da
 }
 
 /* =============================================
-   🕯️ TRADINGVIEW PREMIUM DARK CARDS
+    TRADINGVIEW PREMIUM DARK CARDS
    ============================================= */
 .table-card {
     min-width: 160px;
@@ -408,7 +480,7 @@ All table titles will use this style for a consistent premium look across the da
 }
 
 /* =============================================
-   ✨ CARD HOVER AND ACTIVE STATES
+    CARD HOVER AND ACTIVE STATES
    ============================================= */
 .table-card:hover {
     transform: translateY(-6px);
@@ -433,28 +505,174 @@ All table titles will use this style for a consistent premium look across the da
 }
 
 /* =============================================
-   📊 SINGLE TABLE VIEW HEADER & STATS
+    SINGLE TABLE VIEW HEADER & STATS
    ============================================= */
+
 .table-header-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
     gap: 15px;
-    margin-bottom: 20px;
-    background: rgb(224, 84, 255);
-    padding: 15px 20px;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgb(255, 9, 177);
+    margin-bottom: 25px;
+    padding: 18px 25px;
+    border-radius: 16px;
     position: relative;
+    overflow: hidden;
     z-index: 1;
+
+ 
+    background: linear-gradient(135deg, rgb(224, 84, 255) 0%, rgb(180, 40, 210) 100%);
+    
+    /* 3D Soft Layout Shadows */
+    box-shadow: 
+        0 8px 20px rgba(255, 9, 177, 0.4),
+        inset 0 4px 5px rgba(255, 255, 255, 0.5),
+        inset 0 -5px 10px rgba(0, 0, 0, 0.2);
+        
+    border-top: 1px solid rgba(255, 255, 255, 0.6);
+    border-left: 1px solid rgba(255, 255, 255, 0.4);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.table-header-container h2 { margin: 0; font-size: 22px; }
 
+.table-header-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+        90deg, 
+        rgba(255, 255, 255, 0) 0%, 
+        rgba(255, 255, 255, 0.35) 50%, 
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: skewX(-25deg);
+    z-index: -1;
+    animation: shineGlowWave 4s infinite ease-in-out;
+}
+
+@keyframes shineGlowWave {
+    0% { left: -150%; }
+    50% { left: 150%; }
+    100% { left: 150%; }
+}
+
+.table-header-container h2 { 
+    margin: 0; 
+    font-size: 24px; 
+    font-weight: 900;
+    
+   
+    background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    
+    
+    filter: drop-shadow(0 2px 8px rgba(0, 242, 254, 0.8));
+}
+/* STATS BAR AREA */
 .stats-bar {
     display: flex;
     gap: 12px;
+    align-items: center;
+}
+
+
+.stats-bar > div, .stats-bar > span, .stats-card {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 900;
+    font-size: 13px;
+    backdrop-filter: blur(5px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* =========================================================================
+MONTHLY RESULT CARD
+   ========================================================================= */
+.stats-bar > div:nth-child(1), 
+.stats-card.profit-card {
+    background: rgba(6, 182, 212, 0.2) !important; 
+    color:  #22d3ee !important; 
+    border: 1px solid rgba(6, 182, 212, 0.4) !important;
+}
+
+.stats-bar > div:nth-child(1):hover, 
+.stats-card.profit-card:hover {
+    background:  #06b6d4!important;
+    color: #ffffff !important;
+    border-color: #06b6d4 !important;
+    box-shadow: 0 0 15px #06b6d4, 0 4px 10px rgba(6, 182, 212, 0.4);
+    transform: translateY(-2px);
+}
+ #06b6d4
+
+/* =========================================================================
+   PROFIT CARD
+   ========================================================================= */
+.stats-bar > div:nth-child(2), 
+.stats-card.loss-card {
+    background: rgba(16, 185, 129, 0.2) !important; 
+    color: #52f78e !important; 
+    border: 1px solidrgba(16, 185, 129, 0.4) !important;
+}
+
+.stats-bar > div:nth-child(2):hover, 
+.stats-card.loss-card:hover {
+    background:#10b981!important;
+    color: #ffffff !important;
+    border-color: #10b981 !important;
+    box-shadow: 0 0 15px #10b981, 0 4px 10px rgba(16, 185, 129, 0.4);
+    transform: translateY(-2px);
+}
+
+/* =========================================================================
+   LOSS CARD
+   ========================================================================= */
+.stats-bar > div:nth-child(3), 
+.stats-card.be-card {
+    background:rgba(239, 68, 68, 0.2) !important; /* Soft Yellow Background */
+    color:#750000!important; /* Bright Yellow Text */
+    border: 1px solid rgba(239, 68, 68, 0.4) !important;
+}
+/* 🖱️ BE Hover: මවුස් එක ගියාම මුළුමනින්ම Glow Yellow වේ */
+.stats-bar > div:nth-child(3):hover, 
+.stats-card.be-card:hover {
+    background:#ef4444 !important;
+    color: #000000 !important; /* Text එක කළු වෙන්නේ පැහැදිලිව පෙනෙන්න */
+    border-color:#ef4444 !important;
+    box-shadow: 0 0 15px #ef4444, 0 4px 10px rgba(239, 68, 68, 0.4);
+    transform: translateY(-2px);
+}
+
+/* =========================================================================
+   BE CARD
+   ========================================================================= */
+.stats-bar > div:nth-child(4),
+.stats-card.monthly-card {
+    background: rgba(245, 158, 11, 0.2) !important; /* Soft Cyan/Blue Background */
+    color:#ffd557 !important; /* Bright Cyan Text */
+    border: 1px solid rgba(245, 158, 11, 0.4) !important;
+}
+/* 🖱️ Monthly Hover: මවුස් එක ගියාම මුළුමනින්ම Glow Blue වේ */
+.stats-bar > div:nth-child(4):hover,
+.stats-card.monthly-card:hover {
+    background: #f59e0b !important;
+    color:#000000 !important;
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 15px#f59e0b, 0 4px 10pxrgba(245, 158, 11, 0.4);
+    transform: translateY(-2px);
 }
 
 /* =============================================
@@ -495,10 +713,10 @@ All table titles will use this style for a consistent premium look across the da
 }
 
 /* =============================================
-   📑 SPREADSHEET LAYOUT DESIGN
+   SPREADSHEET LAYOUT DESIGN
    ============================================= */
 /* =============================================
-   🗂️ Table colors an others
+   Table colors an others
    ============================================= */
 .spreadsheet-container {
     width: 100% !important;
@@ -576,8 +794,8 @@ td[contenteditable="true"] {
 }
 
 td[contenteditable="true"]:focus {
-    background-color: #fb0004c5;
-    box-shadow: inset 0 0 0 2px #0ed5a8;
+    background-color: #fff9f9c5;
+    box-shadow: inset 0 0 0 2px #00ffc3;
 }
 
 
@@ -599,7 +817,7 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
 
 
 /* =========================================================================
-   📅 DATE CELLS CUSTOM BACKGROUND COLOR (CSS ONLY)
+    DATE CELLS CUSTOM BACKGROUND COLOR (CSS ONLY)
 ========================================================================= */
 .table-date-cell {
 
@@ -616,7 +834,7 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* =============================================
-   🔘 INTERACTIVE BUTTONS & INPUT STYLES
+    INTERACTIVE BUTTONS & INPUT STYLES
    ============================================= */
 
 
@@ -790,7 +1008,7 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* =============================================
-   ✨ PREMIUM ADD NEW TABLE BUTTON (LEFT ALIGNED)
+    PREMIUM ADD NEW TABLE BUTTON (LEFT ALIGNED)
    ============================================= */
 .btn-primary-container {
     display: flex;
@@ -835,7 +1053,7 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
 
 
 
-/* 🎴 Modal Background Overlay */
+/*  Modal Background Overlay */
 .prompt-modal {
     display: none;
     position: fixed;
@@ -873,7 +1091,7 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
     font-family: sans-serif;
 }
 
-/* ✍️ Input Box Style*/
+/*  Input Box Style*/
 .prompt-modal-content input[type="text"] {
     width: 100%;
     padding: 10px 14px;
@@ -894,7 +1112,7 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
-/* 🔘 Buttons Layout */
+/*  Buttons Layout */
 .prompt-modal-actions {
     display: flex;
     justify-content: flex-end;
@@ -927,7 +1145,7 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
     color: #ffffff;
 }
 
-/* 🎬 Animation */
+/*  Animation */
 @keyframes popupSlideIn {
     from {
         transform: translateY(-20px);
@@ -940,7 +1158,7 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* =============================================
-   🛑 DROPDOWNS & CONDITIONAL CELL STYLES
+    DROPDOWNS & CONDITIONAL CELL STYLES
    ============================================= */
 .table-dropdown {
     width: auto !important; 
@@ -976,7 +1194,7 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* =============================================
-   ⚙️ SYSTEM SETTINGS CONTROLS
+    SYSTEM SETTINGS CONTROLS
    ============================================= */
 .settings-container {
     display: flex;
@@ -1061,7 +1279,7 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* =============================================
-   🖱️ CUSTOM CONTEXT MENU
+   CUSTOM CONTEXT MENU
    ============================================= */
 #custom-context-menu {
     position: absolute;
@@ -1077,7 +1295,7 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* =============================================
-   🛑 MODAL PREVIEW OVERLAY SYSTEM
+    MODAL PREVIEW OVERLAY SYSTEM
    ============================================= */
 .modal-overlay {
     position: fixed; 
@@ -1126,7 +1344,7 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* =============================================
-   🖼️ MODERN MODAL WITH PREMIUM DARK DESIGN
+   MODERN MODAL WITH PREMIUM DARK DESIGN
    ============================================= */
 .modal-overlay {
     position: fixed;
@@ -1160,7 +1378,7 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* =============================================
-   ❌ MODERN CLOSE BUTTON DESIGN
+    MODERN CLOSE BUTTON DESIGN
    ============================================= */
 .close-btn-modern {
     position: absolute;
@@ -1192,11 +1410,9 @@ table input[type="date"]::-webkit-calendar-picker-indicator {
     display: none !important;
 }
 
-/* =============================================
-   📉 MY RULES PREMIUM DOCK BOX
-   ============================================= 
+
 /* =========================================================================
-   📉 PREMIUM ANIMATED MY-RULES CARD DESIGN
+    MY-RULES CARD DESIGN
 ========================================================================= */
 .my-rules-card {
     background: #1e222d; 
@@ -1297,7 +1513,7 @@ margin: 0;
 }
 
 /* =============================================
-   🖱️ CONTAINER HOVER STATE EFFECT
+    CONTAINER HOVER STATE EFFECT
    ============================================= */
 .My-Rules:hover {
    
@@ -1307,7 +1523,7 @@ margin: 0;
                 0 10px 20px -5px rgba(0, 0, 0, 0.04);
 }
 /* ============================================= 
-   🎬 1. SLIDESHOW CONTAINER (LEFT ALIGNED)
+   SLIDESHOW CONTAINER (LEFT ALIGNED)
 ============================================= */
 .slideshow-container {
     max-width: 100%;
@@ -1329,7 +1545,7 @@ margin: 0;
 }
 
 /* ============================================= 
-   🔥 2. NEW MY RULES PREMIUM BOX (UNDER SLIDESHOW)
+    NEW MY RULES PREMIUM BOX (UNDER SLIDESHOW)
 ============================================= */
 .slideshow-container {
     max-width: 100%;
@@ -1349,7 +1565,7 @@ margin: 0;
 }
 
 /* =============================================
-   📝 HEADER TITLE STYLE (H2)
+ HEADER TITLE STYLE (H2)
    ============================================= */
 .My-Rules h2 {
     margin-top: 0;
@@ -1364,7 +1580,7 @@ margin: 0;
 }
 
 /* =============================================
-   📋 UNORDERED LIST RESET (UL)
+    UNORDERED LIST RESET (UL)
    ============================================= */
 .My-Rules ul { 
     margin: 0; 
@@ -1373,7 +1589,7 @@ margin: 0;
 }
 
 /* =============================================
-   🔹 LIST ITEMS INDIVIDUAL STYLE (LI)
+    LIST ITEMS INDIVIDUAL STYLE (LI)
    ============================================= */
 .My-Rules li {
     font-size: 14px;
@@ -1392,7 +1608,7 @@ margin: 0;
 }
 
 /* =============================================
-   🖱️ LIST ITEM HOVER ANIMATION STATE
+LIST ITEM HOVER ANIMATION STATE
    ============================================= */
 .My-Rules li:hover {
     background: #fff5f5; 
@@ -1404,7 +1620,7 @@ margin: 0;
 }
 
 /* =============================================
-   ✨ FLOATING ENTRANCE KEYFRAMES ANIMATION
+ FLOATING ENTRANCE KEYFRAMES ANIMATION
    ============================================= 
 @keyframes floatingFadeIn {
     0% { 
@@ -1418,7 +1634,7 @@ margin: 0;
 }
 
 /* =============================================
-   📊 STATISTICAL RESULT COUNTERS
+    STATISTICAL RESULT COUNTERS
    ============================================= */
 .m-result {
     font-size: 14px;
@@ -1448,7 +1664,7 @@ margin: 0;
 .stat-box.winrate { background-color: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; margin-left: auto; }
 
 /* =============================================
-   🍔 HAMBURGER & RESPONSIVE COLLAPSE ALIGNMENT
+    HAMBURGER & RESPONSIVE COLLAPSE ALIGNMENT
    ============================================= */
 .toggle-hamburger-btn {
     font-size: 24px;
@@ -1490,7 +1706,7 @@ margin: 0;
 }
 
 /* =============================================
-   🖼️ HOME VIEW AUTOMATIC SLIDESHOW
+    HOME VIEW AUTOMATIC SLIDESHOW
    ============================================= */
 /* ============================================= */
 .slideshow-container {
@@ -1544,7 +1760,7 @@ margin: 0;
 }
 
 /* =============================================
-   🗑️ DELETED ROWS & INTERACTIONS
+    DELETED ROWS & INTERACTIONS
    ============================================= */
 #table-body tr.selected-row {
     background-color: #fee2e2 !important; 
@@ -1555,8 +1771,82 @@ margin: 0;
     background-color: #f1f5f9;
 }
 
+
+/*  Weekly Row */
+.weekly-badge-win {
+    background: rgba(16, 185, 129, 0.15);
+    color: #52f78e;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    transition: all 0.3s ease;
+}
+.weekly-badge-win:hover {
+    background: #10b981 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 12px #10b981;
+    transform: translateY(-2px);
+}
+
+.weekly-badge-loss {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ff4d4d;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    transition: all 0.3s ease;
+}
+.weekly-badge-loss:hover {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 12px #ef4444;
+    transform: translateY(-2px);
+}
+
+.weekly-badge-be {
+    background: rgba(245, 158, 11, 0.15);
+    color: #ffd557;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    transition: all 0.3s ease;
+}
+.weekly-badge-be:hover {
+    background: #f59e0b !important;
+    color: #000000 !important;
+    box-shadow: 0 0 12px #f59e0b;
+    transform: translateY(-2px);
+}
+
 /* =============================================
-   🗂️ SPREADSHEET COLUMN FIXED WIDTHS
+   reson cell color
+   ============================================= */
+
+.auto-width-select {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    color: #000000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important; 
+    border-radius: 6px !important;
+    padding: 2px 6px !important;
+    font-size: 12px !important;
+    height: 25px !important;
+    font-family: inherit;
+    cursor: pointer;
+    outline: none !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+
+.auto-width-select:hover {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+
+.auto-width-select option {
+    background-color: #0f172a !important; 
+    color: #ffffff !important;
+    padding: 6px !important;
+}
+
+
+
+/* =============================================
+    SPREADSHEET COLUMN FIXED WIDTHS
    ============================================= */
 .spreadsheet-container {
     width: 100%;
@@ -1599,7 +1889,7 @@ th:nth-child(13), td:nth-child(13) { width: 4%; }
 
 
 /* =============================================
-   📋 DROPDOWNS & INPUTS INSIDE TABLE CELL
+    DROPDOWNS & INPUTS INSIDE TABLE CELL
    ============================================= */
 table select, 
 table input[type="text"] {
@@ -1825,7 +2115,7 @@ table input[type="text"] {
 
 ========================================================================================
 ==========================================================================================
-//* 🎛️ Premium Tab Navigation Buttons */
+//*  Premium Tab Navigation Buttons */
 .tab-container {
     display: flex;
     gap: 12px;
@@ -1849,7 +2139,7 @@ table input[type="text"] {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 🔥 Active බොත්තම දිලිසෙන විදිහ */
+
 .tab-btn.active {
     background: #00f5d4;
     color: #0b132b;
@@ -1861,7 +2151,7 @@ table input[type="text"] {
     background: rgba(255, 255, 255, 0.05);
 }
 
-/* 💎 Saved Notes Placeholder Styling */
+/*Saved Notes Placeholder Styling */
 .saved-notes-placeholder {
     border: 1px dashed #3a506b;
     padding: 40px;
@@ -1882,10 +2172,10 @@ table input[type="text"] {
 }
 
 /* ==========================================================================
-   💎 PREMIUM GOOGLE DRIVE UPLOAD CARD STYLES
+    PREMIUM GOOGLE DRIVE UPLOAD CARD STYLES
    ========================================================================== */
 
-/* 🌌 Main Card Container Animation & Glow */
+/*  Main Card Container Animation & Glow */
 .card-container {
     background: linear-gradient(145deg, #0b132b, #111a36);
     border: 1px solid rgba(0, 245, 212, 0.2);
@@ -1923,7 +2213,7 @@ table input[type="text"] {
     letter-spacing: 0.5px;
 }
 
-/* 🎛️ Premium Tabs Box */
+/*  Premium Tabs Box */
 .tab-container {
     display: flex;
     gap: 10px;
@@ -1958,7 +2248,7 @@ table input[type="text"] {
     background: rgba(255, 255, 255, 0.05);
 }
 
-/* 📥 Drag & Drop Zone Styling */
+/* Drag & Drop Zone Styling */
 .drop-zone {
     border: 2px dashed rgba(0, 245, 212, 0.4);
     background: rgba(28, 37, 65, 0.3);
@@ -1977,10 +2267,10 @@ table input[type="text"] {
     box-shadow: inset 0 0 15px rgba(0, 245, 212, 0.1);
 }
 
-/* ✨ පොඩි කරපු Drive Icon එක සහ උඩින් එන Upload Cloud එක */
+
 .drive-icon-glow {
     position: relative;
-    width: 50px; /* 👈 අයිකන් එක පොඩි කළා */
+    width: 50px; 
     height: 50px;
     margin: 0 auto 20px auto;
 }
@@ -1992,9 +2282,9 @@ table input[type="text"] {
     transition: transform 0.3s ease;
 }
 
-/* ☁️ Upload Arrow Cloud Icon Layer */
+
 .drive-icon-glow::after {
-    content: '☁️'; /* Cloud Icon එක */
+    content: '☁️'; /* Cloud Icon */
     position: absolute;
     top: -15px;
     right: -15px;
@@ -2022,7 +2312,7 @@ table input[type="text"] {
     font-family: sans-serif;
 }
 
-/* 🟩 Browse Button Styling */
+
 .btn-browse {
     background: transparent;
     color: #00f5d4;
@@ -2041,7 +2331,7 @@ table input[type="text"] {
     box-shadow: 0 0 15px rgba(0, 245, 212, 0.4);
     transform: scale(1.02);
 }
-/* 📊 Multiple Files Progress Bars */
+/*  Multiple Files Progress Bars */
 #upload-progress-list {
     margin-top: 20px;
     max-height: 180px;
@@ -2087,7 +2377,7 @@ table input[type="text"] {
 }
 
 /* ==========================================================================
-   🎉 PREMIUM 3D SUCCESS POPUP WITH GLOWING ANIMATION
+    PREMIUM 3D SUCCESS POPUP WITH GLOWING ANIMATION
    ========================================================================== */
 #success-popup-box {
     position: fixed;
@@ -2176,7 +2466,7 @@ table input[type="text"] {
 
 
 
-/* 🗂️ Google Drive Files List Layout */
+/*  Google Drive Files List Layout */
 #saved-files-list {
     display: flex;
     flex-direction: column;
@@ -2238,7 +2528,8 @@ table input[type="text"] {
     font-family: sans-serif;
     font-size: 14px;
 }
-/* --- 💾 12PM AUTO BACKUP STATUS BAR CSS --- */
+
+/* --- 12PM AUTO BACKUP STATUS BAR -- */
 .backup-status-container {
     background: #111827;
     border: 1px solid #1f2937;
@@ -2323,3 +2614,45 @@ table input[type="text"] {
     from { opacity: 1; transform: translateY(0); }
     to { opacity: 0; transform: translateY(-20px); }
 }
+
+
+/*  Locked Row Alert Toast Notification */
+.locked-toast-alert {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%);
+    color: #ffffff;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: slideInToast 0.3s ease forwards;
+}
+
+@keyframes slideInToast {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+
+.locked-historical-row td {
+    cursor: not-allowed !important;
+}
+
+.locked-historical-row select, 
+.locked-historical-row [contenteditable="true"] {
+    pointer-events: none !important; 
+    opacity: 0.6 !important;
+}
+
+
+
+
+
